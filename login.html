@@ -60,6 +60,48 @@
         .border-red-400 {
             border-color: rgba(248, 81, 73, 0.3) !important;
         }
+
+        /* Hide scrollbar for all elements while maintaining scroll functionality */
+        /* Global scrollbar hiding */
+        * {
+            /* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+            -webkit-scrollbar {
+                display: none;
+            }
+            /* Hide scrollbar for Firefox */
+            scrollbar-width: none;
+            /* Hide scrollbar for IE and older Edge */
+            -ms-overflow-style: none;
+        }
+
+        /* Ensure scrollbars stay hidden on all elements */
+        *::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Specific body scrollbar hiding */
+        body {
+            -webkit-scrollbar: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for common scrollable elements */
+        .overflow-y-auto, .overflow-x-auto, .overflow-auto {
+            -webkit-scrollbar: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar, 
+        .overflow-x-auto::-webkit-scrollbar, 
+        .overflow-auto::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 <body class="login-container flex items-center justify-center">

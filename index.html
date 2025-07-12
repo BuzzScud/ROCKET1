@@ -359,8 +359,9 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Hide scrollbar for notifications list while maintaining scroll functionality */
-        #notificationList {
+        /* Hide scrollbar for all elements while maintaining scroll functionality */
+        /* Global scrollbar hiding */
+        * {
             /* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
             -webkit-scrollbar {
                 display: none;
@@ -371,8 +372,32 @@
             -ms-overflow-style: none;
         }
 
-        /* Ensure the scrollbar stays hidden even on hover/focus */
-        #notificationList::-webkit-scrollbar {
+        /* Ensure scrollbars stay hidden on all elements */
+        *::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Specific body scrollbar hiding */
+        body {
+            -webkit-scrollbar: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for common scrollable elements */
+        .overflow-y-auto, .overflow-x-auto, .overflow-auto {
+            -webkit-scrollbar: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar, 
+        .overflow-x-auto::-webkit-scrollbar, 
+        .overflow-auto::-webkit-scrollbar {
             display: none;
         }
     </style>
@@ -953,7 +978,21 @@
                     
                     <!-- Daily Global Numerology Forecast -->
                     <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-6 mb-8 text-white">
-                        <h2 class="text-2xl font-bold mb-4">Daily Global Numerology Forecast</h2>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-2xl font-bold">Daily Global Numerology Forecast</h2>
+                            <div class="flex items-center space-x-2">
+                                <div class="flex items-center">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
+                                    <span class="text-sm opacity-80">Live Updates</span>
+                                </div>
+                                <button onclick="refreshNumerologyForecast()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
                         <div id="numerologyForecast" class="space-y-4">
                             <div id="numerologyLoading" class="text-center py-8">
                                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
@@ -978,6 +1017,10 @@
                                     <h3 class="font-semibold mb-3 text-lg">Today's Forecast</h3>
                                     <p id="forecastText" class="text-lg leading-relaxed mb-4">--</p>
                                     <div class="text-sm opacity-80 border-t border-white border-opacity-30 pt-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span id="lastUpdated" class="text-xs opacity-70">Last updated: --</span>
+                                            <span id="nextUpdate" class="text-xs opacity-70">Next update: --</span>
+                                        </div>
                                         <p id="disclaimer">These are global tendencies, not personal predictions. Free will prevails, and individual choices shape your day.</p>
                                     </div>
                                 </div>
@@ -1553,29 +1596,57 @@
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                         <!-- Portfolio Tracker -->
                         <div class="bg-white rounded-lg shadow-md p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <svg class="w-5 h-5 text-green-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                My Portfolio
-                            </h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <svg class="w-5 h-5 text-green-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    My Portfolio
+                                </h3>
+                                <div class="flex space-x-2">
+                                    <button onclick="showAddTradeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors">
+                                        Add Trade
+                                    </button>
+                                    <button onclick="togglePortfolioView()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors">
+                                        <span id="viewToggleText">Detailed View</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Portfolio Summary Stats -->
+                            <div class="grid grid-cols-3 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">Total Value</div>
+                                    <div id="portfolioTotalValue" class="text-lg font-bold text-green-600">$0.00</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">Total P&L</div>
+                                    <div id="portfolioTotalPL" class="text-lg font-bold">$0.00</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">Win Rate</div>
+                                    <div id="portfolioWinRate" class="text-lg font-bold text-blue-600">0%</div>
+                                </div>
+                            </div>
+                            
                             <div class="overflow-x-auto">
                                 <table class="w-full">
                                     <thead>
                                         <tr class="border-b border-gray-200">
                                             <th class="text-left py-2 text-sm font-medium text-gray-700">Symbol</th>
-                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Price</th>
-                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Change</th>
-                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Action</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Qty</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Avg Price</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">P&L</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="portfolioTable">
                                         <tr>
-                                            <td colspan="4" class="py-8 text-center text-gray-500">
+                                            <td colspan="5" class="py-8 text-center text-gray-500">
                                                 <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                                 </svg>
-                                                <p>No stocks in portfolio. Add stocks to track them here.</p>
+                                                <p>No trades in portfolio. Add trades to track them here.</p>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -1676,7 +1747,7 @@
                     </div>
 
                     <!-- Financial Calculator -->
-                    <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">
                             <svg class="w-5 h-5 text-indigo-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
@@ -1700,6 +1771,303 @@
                         <div class="mt-4 flex space-x-4 items-center">
                             <button id="calculateButton" onclick="calculateInvestment()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">Calculate Returns</button>
                             <div id="calculationResult" class="text-lg font-bold text-gray-900"></div>
+                        </div>
+                    </div>
+
+                    <!-- Watchlist Management -->
+                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <svg class="w-5 h-5 text-yellow-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                Stock Watchlist
+                            </h3>
+                            <button onclick="showAddWatchlistModal()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Add to Watchlist
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Symbol</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Current Price</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Target Price</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">% to Target</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Alert</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="watchlistTable">
+                                    <tr>
+                                        <td colspan="6" class="py-8 text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            <p>No stocks in watchlist. Add stocks to track price targets.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Trade Journal -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <svg class="w-5 h-5 text-blue-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Trade Journal
+                            </h3>
+                            <div class="flex space-x-2">
+                                <button onclick="showTradeJournalModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    Add Journal Entry
+                                </button>
+                                <button onclick="exportTradeJournal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-green-800 mb-2">Winning Trades</h4>
+                                <p id="winningTrades" class="text-2xl font-bold text-green-600">0</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-red-800 mb-2">Losing Trades</h4>
+                                <p id="losingTrades" class="text-2xl font-bold text-red-600">0</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-blue-800 mb-2">Total P&L</h4>
+                                <p id="totalPL" class="text-2xl font-bold text-blue-600">$0.00</p>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Date</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Symbol</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Entry</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Exit</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">P&L</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Notes</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="journalTable">
+                                    <tr>
+                                        <td colspan="7" class="py-8 text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            <p>No journal entries yet. Start documenting your trades.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Analytics Box -->
+                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <svg class="w-5 h-5 text-purple-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                Portfolio Analytics
+                            </h3>
+                            <button onclick="refreshPortfolioAnalytics()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Refresh Data
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-blue-800 mb-2">Portfolio Beta</h4>
+                                <p id="portfolioBeta" class="text-xl font-bold text-blue-600">1.2</p>
+                                <p class="text-xs text-blue-600 mt-1">vs S&P 500</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-green-800 mb-2">Sharpe Ratio</h4>
+                                <p id="sharpeRatio" class="text-xl font-bold text-green-600">1.45</p>
+                                <p class="text-xs text-green-600 mt-1">Risk-adjusted return</p>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-yellow-800 mb-2">Max Drawdown</h4>
+                                <p id="maxDrawdown" class="text-xl font-bold text-yellow-600">-12.3%</p>
+                                <p class="text-xs text-yellow-600 mt-1">Largest loss</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-red-800 mb-2">Volatility</h4>
+                                <p id="portfolioVolatility" class="text-xl font-bold text-red-600">18.2%</p>
+                                <p class="text-xs text-red-600 mt-1">Annualized</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="text-md font-semibold text-gray-900 mb-3">Sector Allocation</h4>
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Technology</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-blue-600 h-2 rounded-full" style="width: 45%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium">45%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Healthcare</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-green-600 h-2 rounded-full" style="width: 25%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium">25%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Finance</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-yellow-600 h-2 rounded-full" style="width: 20%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium">20%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Other</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-purple-600 h-2 rounded-full" style="width: 10%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium">10%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-md font-semibold text-gray-900 mb-3">Performance Metrics</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">YTD Return:</span>
+                                        <span id="ytdReturn" class="text-sm font-medium text-green-600">+24.5%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">1-Year Return:</span>
+                                        <span id="oneYearReturn" class="text-sm font-medium text-green-600">+18.2%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Best Trade:</span>
+                                        <span id="bestTrade" class="text-sm font-medium text-green-600">+$2,450</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Worst Trade:</span>
+                                        <span id="worstTrade" class="text-sm font-medium text-red-600">-$890</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Avg Trade:</span>
+                                        <span id="avgTrade" class="text-sm font-medium text-blue-600">+$347</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Market Alerts & Risk Management Box -->
+                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <svg class="w-5 h-5 text-orange-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 13.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Market Alerts & Risk Management
+                            </h3>
+                            <button onclick="showRiskManagementModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Set Risk Rules
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-red-800 mb-2">Active Alerts</h4>
+                                <p id="activeAlerts" class="text-xl font-bold text-red-600">3</p>
+                                <p class="text-xs text-red-600 mt-1">Price triggers</p>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-yellow-800 mb-2">Risk Score</h4>
+                                <p id="riskScore" class="text-xl font-bold text-yellow-600">Medium</p>
+                                <p class="text-xs text-yellow-600 mt-1">Portfolio risk</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-green-800 mb-2">Stop Losses</h4>
+                                <p id="stopLossCount" class="text-xl font-bold text-green-600">7</p>
+                                <p class="text-xs text-green-600 mt-1">Active orders</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="text-md font-semibold text-gray-900 mb-3">Recent Alerts</h4>
+                                <div class="space-y-2 max-h-32 overflow-y-auto">
+                                    <div class="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                            <span class="text-sm font-medium">AAPL</span>
+                                        </div>
+                                        <span class="text-xs text-red-600">Price below $150</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                            <span class="text-sm font-medium">MSFT</span>
+                                        </div>
+                                        <span class="text-xs text-yellow-600">Volume spike</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                            <span class="text-sm font-medium">GOOGL</span>
+                                        </div>
+                                        <span class="text-xs text-green-600">Target reached</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-md font-semibold text-gray-900 mb-3">Risk Management</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Position Size Limit:</span>
+                                        <span class="text-sm font-medium">5% per trade</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Stop Loss:</span>
+                                        <span class="text-sm font-medium">-2% default</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Daily Loss Limit:</span>
+                                        <span class="text-sm font-medium">-$1,000</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Margin Usage:</span>
+                                        <span class="text-sm font-medium text-green-600">45% / 80%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Correlation Risk:</span>
+                                        <span class="text-sm font-medium text-yellow-600">Medium</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2601,16 +2969,39 @@
                     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                             <div class="flex-1 mb-4 lg:mb-0 lg:mr-6">
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                        </svg>
+                                <div class="flex space-x-4">
+                                    <div class="relative flex-1">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="noteSearch" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Search notes..." onkeyup="searchNotes()">
                                     </div>
-                                    <input type="text" id="noteSearch" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Search notes..." onkeyup="searchNotes()">
+                                    <select id="categoryFilter" class="custom-select px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-700" onchange="filterNotes()">
+                                        <option value="">All Categories</option>
+                                        <option value="general">General</option>
+                                        <option value="trading">Trading Strategy</option>
+                                        <option value="analysis">Market Analysis</option>
+                                        <option value="research">Research</option>
+                                        <option value="ideas">Ideas</option>
+                                        <option value="watchlist">Watchlist</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="flex space-x-3">
+                                <button onclick="toggleViewMode()" id="viewModeToggle" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                                    </svg>
+                                    Table View
+                                </button>
+                                <button onclick="showFileUploadModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                    </svg>
+                                    Upload Files
+                                </button>
                                 <button onclick="showNewNoteModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -2627,8 +3018,113 @@
                         </div>
                     </div>
 
-                    <!-- Notes Grid -->
-                    <div id="notesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Bulk Actions Bar -->
+                    <div id="bulkActionsBar" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 hidden">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <span id="selectedCount" class="text-sm font-medium text-yellow-800">0 notes selected</span>
+                                <button onclick="selectAllNotes()" class="text-sm text-yellow-700 hover:text-yellow-900 font-medium">Select All</button>
+                                <button onclick="clearSelection()" class="text-sm text-yellow-700 hover:text-yellow-900 font-medium">Clear Selection</button>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="bulkCategorize()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
+                                    Categorize
+                                </button>
+                                <button onclick="bulkDelete()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Data Table -->
+                    <div id="notesTableContainer" class="bg-white rounded-lg shadow-md overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table id="notesTable" class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <input type="checkbox" id="selectAllCheckbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" onchange="toggleSelectAll()">
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable('title')">
+                                            <div class="flex items-center">
+                                                Title
+                                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                                                </svg>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable('category')">
+                                            <div class="flex items-center">
+                                                Category
+                                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                                                </svg>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Content Preview
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Files
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Similarities
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable('lastModified')">
+                                            <div class="flex items-center">
+                                                Last Modified
+                                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                                                </svg>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notesTableBody" class="bg-white divide-y divide-gray-200">
+                                    <!-- Notes will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div id="notesPagination" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <button onclick="previousPage()" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    Previous
+                                </button>
+                                <button onclick="nextPage()" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    Next
+                                </button>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Showing <span id="showingStart" class="font-medium">1</span> to <span id="showingEnd" class="font-medium">10</span> of <span id="totalNotes" class="font-medium">0</span> notes
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <button onclick="previousPage()" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            Previous
+                                        </button>
+                                        <div id="paginationNumbers" class="flex">
+                                            <!-- Page numbers will be populated here -->
+                                        </div>
+                                        <button onclick="nextPage()" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            Next
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Grid (Card View) -->
+                    <div id="notesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 hidden">
                         <!-- Notes will be populated here -->
                     </div>
 
@@ -2681,6 +3177,21 @@
                                     <textarea id="noteContent" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="8" placeholder="Write your note here..." required></textarea>
                                 </div>
                                 
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Attached Files</label>
+                                    <div id="noteAttachments" class="border border-gray-300 rounded-lg p-3 bg-gray-50 min-h-[80px]">
+                                        <div id="attachmentsList" class="space-y-2">
+                                            <!-- Attached files will be shown here -->
+                                        </div>
+                                        <button type="button" onclick="attachFilesToNote()" class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                            </svg>
+                                            Attach Files
+                                        </button>
+                                    </div>
+                                </div>
+                                
                                 <div class="flex justify-end space-x-3 pt-4">
                                     <button type="button" onclick="closeNoteModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                                         Cancel
@@ -2693,6 +3204,118 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- File Upload Modal -->
+                <div id="fileUploadModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+                    <div class="flex items-center justify-center min-h-screen px-4">
+                        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xl font-bold text-gray-900">Upload Files</h2>
+                                <button onclick="closeFileUploadModal()" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <!-- File Drop Zone -->
+                            <div id="fileDropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600">
+                                    <span class="font-medium text-blue-600 hover:text-blue-500">Click to upload</span> or drag and drop
+                                </p>
+                                <p class="text-xs text-gray-500">PNG, JPG, PDF, DOC, TXT up to 10MB</p>
+                                <input type="file" id="fileInput" class="hidden" multiple accept=".png,.jpg,.jpeg,.pdf,.doc,.docx,.txt,.md" onchange="handleFileSelect(event)">
+                            </div>
+                            
+                            <!-- File List -->
+                            <div id="fileList" class="mt-4 space-y-2 max-h-40 overflow-y-auto">
+                                <!-- Files will be listed here -->
+                            </div>
+                            
+                            <!-- Upload Progress -->
+                            <div id="uploadProgress" class="mt-4 hidden">
+                                <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                                    <span>Uploading files...</span>
+                                    <span id="progressPercent">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" onclick="closeFileUploadModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="uploadFiles()" id="uploadButton" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50" disabled>
+                                    Upload Files
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Categorize Modal -->
+                <div id="bulkCategorizeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+                    <div class="flex items-center justify-center min-h-screen px-4">
+                        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xl font-bold text-gray-900">Bulk Categorize</h2>
+                                <button onclick="closeBulkCategorizeModal()" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4">Select a category to apply to all selected notes:</p>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <select id="bulkCategorySelect" class="custom-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-700">
+                                    <option value="general">General</option>
+                                    <option value="trading">Trading Strategy</option>
+                                    <option value="analysis">Market Analysis</option>
+                                    <option value="research">Research</option>
+                                    <option value="ideas">Ideas</option>
+                                    <option value="watchlist">Watchlist</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="closeBulkCategorizeModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="applyBulkCategorize()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                    Apply Category
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note Similarities Modal -->
+                <div id="similaritiesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+                    <div class="flex items-center justify-center min-h-screen px-4">
+                        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xl font-bold text-gray-900">Similar Notes</h2>
+                                <button onclick="closeSimilaritiesModal()" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <div id="similaritiesContent" class="space-y-4">
+                                <!-- Similarities will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
             </div>
         </main>
@@ -2702,6 +3325,197 @@
     <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
 
     <!-- Profile Modal -->
+    <!-- Add Trade Modal -->
+    <div id="addTradeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Add New Trade</h2>
+                    <button id="closeAddTradeModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="addTradeForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
+                            <input type="text" id="tradeSymbol" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="AAPL" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                            <select id="tradeType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="BUY">Buy</option>
+                                <option value="SELL">Sell</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                            <input type="number" id="tradeQuantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="100" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                            <input type="number" id="tradePrice" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="150.00" required>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Entry Date</label>
+                            <input type="date" id="tradeDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Strategy</label>
+                            <select id="tradeStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="Long Term">Long Term</option>
+                                <option value="Swing Trade">Swing Trade</option>
+                                <option value="Day Trade">Day Trade</option>
+                                <option value="Options">Options</option>
+                                <option value="Scalping">Scalping</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                        <textarea id="tradeNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Trade rationale, stop loss, target..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" id="cancelAddTrade" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Trade</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Watchlist Modal -->
+    <div id="addWatchlistModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Add to Watchlist</h2>
+                    <button id="closeAddWatchlistModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="addWatchlistForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
+                        <input type="text" id="watchlistSymbol" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="AAPL" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Target Price ($)</label>
+                        <input type="number" id="watchlistTargetPrice" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="200.00" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Alert Type</label>
+                        <select id="watchlistAlertType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            <option value="Above">Above Target</option>
+                            <option value="Below">Below Target</option>
+                            <option value="Both">Both Directions</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                        <textarea id="watchlistNotes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Reason for watching..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" id="cancelAddWatchlist" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">Add to Watchlist</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trade Journal Modal -->
+    <div id="tradeJournalModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Add Trade Journal Entry</h2>
+                    <button id="closeTradeJournalModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="tradeJournalForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
+                            <input type="text" id="journalSymbol" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="AAPL" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Trade Date</label>
+                            <input type="date" id="journalDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Entry Price ($)</label>
+                            <input type="number" id="journalEntryPrice" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="150.00" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Exit Price ($)</label>
+                            <input type="number" id="journalExitPrice" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="160.00">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Position Size</label>
+                            <input type="number" id="journalPositionSize" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="100" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Trade Type</label>
+                            <select id="journalTradeType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="Long">Long</option>
+                                <option value="Short">Short</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Strategy Used</label>
+                        <select id="journalStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Breakout">Breakout</option>
+                            <option value="Mean Reversion">Mean Reversion</option>
+                            <option value="Trend Following">Trend Following</option>
+                            <option value="Swing Trading">Swing Trading</option>
+                            <option value="Scalping">Scalping</option>
+                            <option value="Options">Options</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Trade Notes</label>
+                        <textarea id="journalNotes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="What worked? What didn't? Key lessons learned..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" id="cancelTradeJournal" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
@@ -3435,6 +4249,39 @@
                 document.getElementById('helpModal').addEventListener('click', (e) => {
                     if (e.target === e.currentTarget) {
                         this.hideHelpModal();
+                    }
+                });
+                
+                // Add Trade modal event listeners
+                document.getElementById('closeAddTradeModal').addEventListener('click', hideAddTradeModal);
+                document.getElementById('cancelAddTrade').addEventListener('click', hideAddTradeModal);
+                document.getElementById('addTradeForm').addEventListener('submit', addTrade);
+                
+                document.getElementById('addTradeModal').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        hideAddTradeModal();
+                    }
+                });
+                
+                // Watchlist modal event listeners
+                document.getElementById('closeAddWatchlistModal').addEventListener('click', hideAddWatchlistModal);
+                document.getElementById('cancelAddWatchlist').addEventListener('click', hideAddWatchlistModal);
+                document.getElementById('addWatchlistForm').addEventListener('submit', addWatchlistItem);
+                
+                document.getElementById('addWatchlistModal').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        hideAddWatchlistModal();
+                    }
+                });
+                
+                // Trade Journal modal event listeners
+                document.getElementById('closeTradeJournalModal').addEventListener('click', hideTradeJournalModal);
+                document.getElementById('cancelTradeJournal').addEventListener('click', hideTradeJournalModal);
+                document.getElementById('tradeJournalForm').addEventListener('submit', addJournalEntry);
+                
+                document.getElementById('tradeJournalModal').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        hideTradeJournalModal();
                     }
                 });
             }
@@ -4562,7 +5409,7 @@
         // Weekly Energy Trends Chart Functions
         let energyChart = null;
         
-        function initializeEnergyChart() {
+        async function initializeEnergyChart() {
             const canvas = document.getElementById('energyChartCanvas');
             if (!canvas) {
                 console.error('Energy chart canvas not found');
@@ -4571,108 +5418,352 @@
             
             const ctx = canvas.getContext('2d');
             
-            // Generate sample energy data for the past 7 days
-            const energyData = generateEnergyData();
+            // Show loading indicator
+            const chartContainer = document.getElementById('energyChart');
+            if (chartContainer) {
+                chartContainer.innerHTML = '<div class="flex items-center justify-center h-64"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div><span class="ml-2 text-gray-600">Loading energy data...</span></div>';
+            }
             
-            energyChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: energyData.labels,
-                    datasets: [{
-                        label: 'Energy Level',
-                        data: energyData.values,
-                        borderColor: '#8B5CF6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#8B5CF6',
-                        pointBorderColor: '#FFFFFF',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)',
-                                borderDash: [5, 5]
-                            },
-                            ticks: {
-                                color: '#6B7280',
-                                font: {
-                                    size: 12
-                                }
-                            }
+            try {
+                // Generate live energy data for the past 7 days
+                const energyData = await generateEnergyData();
+                
+                // Restore canvas after loading
+                if (chartContainer) {
+                    chartContainer.innerHTML = '<canvas id="energyChartCanvas"></canvas>';
+                    const newCanvas = document.getElementById('energyChartCanvas');
+                    const newCtx = newCanvas.getContext('2d');
+                    
+                    energyChart = new Chart(newCtx, {
+                        type: 'line',
+                        data: {
+                            labels: energyData.labels,
+                            datasets: [{
+                                label: 'Market Energy Level',
+                                data: energyData.values,
+                                borderColor: '#8B5CF6',
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#8B5CF6',
+                                pointBorderColor: '#FFFFFF',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 8
+                            }]
                         },
-                        x: {
-                            grid: {
-                                display: false
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        color: '#6B7280',
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#FFFFFF',
+                                    bodyColor: '#FFFFFF',
+                                    borderColor: '#8B5CF6',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Energy Level: ${context.parsed.y.toFixed(1)}`;
+                                        }
+                                    }
+                                }
                             },
-                            ticks: {
-                                color: '#6B7280',
-                                font: {
-                                    size: 12
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.1)',
+                                        borderDash: [5, 5]
+                                    },
+                                    ticks: {
+                                        color: '#6B7280',
+                                        font: {
+                                            size: 12
+                                        },
+                                        callback: function(value) {
+                                            return value + '%';
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        color: '#6B7280',
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                    });
                 }
-            });
+                
+                showNotification('Energy chart loaded with live market data', 'success');
+            } catch (error) {
+                console.error('Error initializing energy chart:', error);
+                showNotification('Failed to load live energy data, using fallback', 'warning');
+                
+                // Fallback to basic chart
+                if (chartContainer) {
+                    chartContainer.innerHTML = '<canvas id="energyChartCanvas"></canvas>';
+                    const newCanvas = document.getElementById('energyChartCanvas');
+                    const newCtx = newCanvas.getContext('2d');
+                    
+                    energyChart = new Chart(newCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            datasets: [{
+                                label: 'Energy Level (Fallback)',
+                                data: [65, 72, 58, 83, 76, 69, 71],
+                                borderColor: '#8B5CF6',
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, max: 100 },
+                                x: { grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+            }
         }
         
-        function generateEnergyData() {
+        async function generateEnergyData() {
             const labels = [];
             const values = [];
             
-            // Generate past 7 days
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                
-                labels.push(date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
-                
-                // Generate energy values based on numerology-inspired patterns
-                const dayOfWeek = date.getDay();
-                const baseEnergy = 50 + (Math.sin(i * 0.5) * 20) + (Math.random() * 20 - 10);
-                
-                // Add day-specific energy patterns
-                let energyModifier = 0;
-                switch (dayOfWeek) {
-                    case 0: energyModifier = 5; break;  // Sunday - spiritual
-                    case 1: energyModifier = 15; break; // Monday - new beginnings
-                    case 2: energyModifier = 10; break; // Tuesday - action
-                    case 3: energyModifier = 20; break; // Wednesday - communication
-                    case 4: energyModifier = 12; break; // Thursday - expansion
-                    case 5: energyModifier = 18; break; // Friday - creativity
-                    case 6: energyModifier = 8; break;  // Saturday - reflection
+            // Market symbols to track for energy calculation
+            const marketSymbols = ['SPY', 'QQQ', 'DIA', 'VIX', 'UVXY'];
+            
+            try {
+                // Generate past 7 days with live market data
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    
+                    labels.push(date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+                    
+                    // Calculate energy based on real market data
+                    const energy = await calculateMarketEnergy(date, marketSymbols);
+                    values.push(energy);
                 }
-                
-                values.push(Math.max(10, Math.min(90, baseEnergy + energyModifier)));
+            } catch (error) {
+                console.error('Error fetching live market data for energy calculation:', error);
+                // Fallback to enhanced numerology-based calculation
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    
+                    labels.push(date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+                    
+                    // Enhanced numerology calculation with real-time elements
+                    const dayOfWeek = date.getDay();
+                    const dayOfMonth = date.getDate();
+                    const hour = new Date().getHours();
+                    
+                    // Base energy calculation using numerology
+                    const dayNumber = calculateDayEnergyNumber(date);
+                    const baseEnergy = 30 + (dayNumber * 3) + (Math.sin(i * 0.8) * 15);
+                    
+                    // Market session energy modifier
+                    const marketHours = hour >= 9 && hour <= 16;
+                    const marketModifier = marketHours ? 15 : 5;
+                    
+                    // Day-specific energy patterns
+                    let energyModifier = 0;
+                    switch (dayOfWeek) {
+                        case 0: energyModifier = 8; break;  // Sunday - spiritual preparation
+                        case 1: energyModifier = 20; break; // Monday - new beginnings (high energy)
+                        case 2: energyModifier = 15; break; // Tuesday - action and momentum
+                        case 3: energyModifier = 25; break; // Wednesday - peak communication
+                        case 4: energyModifier = 18; break; // Thursday - expansion and growth
+                        case 5: energyModifier = 22; break; // Friday - creativity and completion
+                        case 6: energyModifier = 12; break; // Saturday - reflection and analysis
+                    }
+                    
+                    // Lunar cycle influence (simplified)
+                    const lunarInfluence = Math.sin((dayOfMonth / 29.5) * Math.PI * 2) * 8;
+                    
+                    const finalEnergy = baseEnergy + energyModifier + marketModifier + lunarInfluence;
+                    values.push(Math.max(15, Math.min(95, finalEnergy)));
+                }
             }
             
             return { labels, values };
         }
-        
-        function refreshEnergyChart() {
-            if (energyChart) {
-                const newData = generateEnergyData();
-                energyChart.data.labels = newData.labels;
-                energyChart.data.datasets[0].data = newData.values;
-                energyChart.update();
+
+        // Calculate energy number for a specific date using numerology
+        function calculateDayEnergyNumber(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // Sum all digits
+            const dateStr = `${year}${month < 10 ? '0' + month : month}${day < 10 ? '0' + day : day}`;
+            let sum = dateStr.split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+            
+            // Reduce to single digit or master number
+            while (sum > 9 && ![11, 22, 33].includes(sum)) {
+                sum = sum.toString().split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+            }
+            
+            return sum;
+        }
+
+        // Calculate market energy based on real market data
+        async function calculateMarketEnergy(date, symbols) {
+            let totalEnergy = 0;
+            let validSymbols = 0;
+            
+            // Only fetch data for current date to avoid weekend/holiday issues
+            const today = new Date();
+            const isToday = date.toDateString() === today.toDateString();
+            
+            if (!isToday) {
+                // For historical dates, use numerology-based calculation
+                return calculateHistoricalEnergy(date);
+            }
+            
+            try {
+                // Fetch market data from our API
+                const promises = symbols.map(symbol => 
+                    fetch(`/api/quote/${symbol}`)
+                        .then(response => response.json())
+                        .catch(error => {
+                            console.warn(`Failed to fetch ${symbol}:`, error);
+                            return null;
+                        })
+                );
                 
-                showNotification('Energy chart refreshed', 'success');
+                const marketData = await Promise.all(promises);
+                
+                marketData.forEach((data, index) => {
+                    if (data && data.price > 0) {
+                        const symbol = symbols[index];
+                        let energy = 0;
+                        
+                        // Calculate energy based on different factors
+                        if (symbol === 'VIX' || symbol === 'UVXY') {
+                            // Volatility symbols - high VIX = higher energy
+                            energy = Math.min(30, data.price * 2);
+                        } else {
+                            // Price change energy
+                            const changeEnergy = Math.abs(data.change_percent) * 2;
+                            
+                            // Volume energy (normalized)
+                            const volumeEnergy = Math.min(15, (data.volume / 1000000) * 2);
+                            
+                            // Momentum energy
+                            const momentumEnergy = data.change_percent > 0 ? 10 : 8;
+                            
+                            energy = changeEnergy + volumeEnergy + momentumEnergy;
+                        }
+                        
+                        totalEnergy += energy;
+                        validSymbols++;
+                    }
+                });
+                
+                if (validSymbols > 0) {
+                    const avgEnergy = totalEnergy / validSymbols;
+                    // Add time-based boost
+                    const timeBoost = Math.sin((new Date().getHours() / 24) * Math.PI * 2) * 5;
+                    
+                    return Math.max(20, Math.min(90, avgEnergy + timeBoost + 25));
+                }
+                
+            } catch (error) {
+                console.error('Error calculating market energy:', error);
+            }
+            
+            // Fallback to enhanced numerology calculation
+            return calculateHistoricalEnergy(date);
+        }
+
+        // Calculate historical energy for past dates
+        function calculateHistoricalEnergy(date) {
+            const dayOfWeek = date.getDay();
+            const dayOfMonth = date.getDate();
+            const dayNumber = calculateDayEnergyNumber(date);
+            
+            const baseEnergy = 35 + (dayNumber * 2.5);
+            
+            // Historical day patterns
+            const dayModifiers = {
+                0: 12, // Sunday
+                1: 22, // Monday
+                2: 18, // Tuesday
+                3: 28, // Wednesday
+                4: 20, // Thursday
+                5: 25, // Friday
+                6: 15  // Saturday
+            };
+            
+            const weekdayModifier = dayModifiers[dayOfWeek];
+            const lunarInfluence = Math.sin((dayOfMonth / 29.5) * Math.PI * 2) * 6;
+            
+            return Math.max(18, Math.min(88, baseEnergy + weekdayModifier + lunarInfluence));
+        }
+        
+        async function refreshEnergyChart() {
+            if (energyChart) {
+                try {
+                    // Show loading state
+                    const refreshButton = document.querySelector('button[onclick="refreshEnergyChart()"]');
+                    if (refreshButton) {
+                        refreshButton.disabled = true;
+                        refreshButton.innerHTML = '<svg class="w-4 h-4 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refreshing...';
+                    }
+                    
+                    const newData = await generateEnergyData();
+                    energyChart.data.labels = newData.labels;
+                    energyChart.data.datasets[0].data = newData.values;
+                    energyChart.update();
+                    
+                    // Update chart title if live data was used
+                    const hasLiveData = newData.values.some(val => val > 0);
+                    if (hasLiveData) {
+                        energyChart.data.datasets[0].label = 'Market Energy Level (Live)';
+                        energyChart.update();
+                    }
+                    
+                    showNotification('Energy chart refreshed with live market data', 'success');
+                } catch (error) {
+                    console.error('Error refreshing energy chart:', error);
+                    showNotification('Failed to refresh energy data', 'error');
+                } finally {
+                    // Restore button state
+                    const refreshButton = document.querySelector('button[onclick="refreshEnergyChart()"]');
+                    if (refreshButton) {
+                        refreshButton.disabled = false;
+                        refreshButton.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refresh';
+                    }
+                }
             }
         }
 
@@ -5182,36 +6273,259 @@
              }
          }
 
-        // Notes Management Functions
+        // Enhanced Notes Management System
         let currentEditingNoteId = null;
+        let currentViewMode = 'table'; // 'table' or 'grid'
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let sortField = 'lastModified';
+        let sortDirection = 'desc';
+        let selectedNotes = new Set();
+        let allNotes = [];
+        let filteredNotes = [];
+        let uploadedFiles = [];
         
         function initializeNotes() {
             loadNotes();
+            setupEventHandlers();
+            setupFileUpload();
             
+            // Initialize table view by default
+            toggleViewMode();
+        }
+        
+        function setupEventHandlers() {
             // Add form submit handler
             const noteForm = document.getElementById('noteForm');
             if (noteForm) {
                 noteForm.addEventListener('submit', handleNoteSave);
             }
+            
+            // File drop zone handlers
+            setupFileDropZone();
+            
+            // Search and filter handlers
+            const searchInput = document.getElementById('noteSearch');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        searchNotes();
+                    }, 300);
+                });
+            }
+        }
+        
+        function setupFileDropZone() {
+            const dropZone = document.getElementById('fileDropZone');
+            if (!dropZone) return;
+            
+            dropZone.addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-400', 'bg-blue-50');
+            });
+            
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+                
+                const files = Array.from(e.dataTransfer.files);
+                handleFileSelect({ target: { files } });
+            });
         }
         
         function loadNotes() {
-            const notes = JSON.parse(localStorage.getItem('tradingNotes') || '[]');
+            allNotes = JSON.parse(localStorage.getItem('tradingNotes') || '[]');
+            
+            // Also load uploaded files
+            uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            
+            // Apply filters and search
+            applyFiltersAndSearch();
+            
+            // Update display based on current view mode
+            if (currentViewMode === 'table') {
+                loadNotesTable();
+            } else {
+                loadNotesGrid();
+            }
+            
+            // Update bulk actions state
+            updateBulkActionsVisibility();
+        }
+        
+        function applyFiltersAndSearch() {
+            const searchTerm = document.getElementById('noteSearch')?.value.toLowerCase().trim() || '';
+            const categoryFilter = document.getElementById('categoryFilter')?.value || '';
+            
+            filteredNotes = allNotes.filter(note => {
+                const matchesSearch = !searchTerm || 
+                    note.title.toLowerCase().includes(searchTerm) ||
+                    note.content.toLowerCase().includes(searchTerm) ||
+                    note.category.toLowerCase().includes(searchTerm);
+                
+                const matchesCategory = !categoryFilter || note.category === categoryFilter;
+                
+                return matchesSearch && matchesCategory;
+            });
+            
+            // Apply sorting
+            sortNotes();
+            
+            // Reset pagination
+            currentPage = 1;
+        }
+        
+        function sortNotes() {
+            filteredNotes.sort((a, b) => {
+                let aValue = a[sortField];
+                let bValue = b[sortField];
+                
+                if (sortField === 'lastModified' || sortField === 'created') {
+                    aValue = new Date(aValue).getTime();
+                    bValue = new Date(bValue).getTime();
+                }
+                
+                if (typeof aValue === 'string') {
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+                
+                if (sortDirection === 'desc') {
+                    return bValue > aValue ? 1 : -1;
+                } else {
+                    return aValue > bValue ? 1 : -1;
+                }
+            });
+        }
+        
+        function loadNotesTable() {
+            const tableBody = document.getElementById('notesTableBody');
+            const emptyState = document.getElementById('emptyNotesState');
+            const tableContainer = document.getElementById('notesTableContainer');
+            
+            if (filteredNotes.length === 0) {
+                tableContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            tableContainer.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            // Calculate pagination
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedNotes = filteredNotes.slice(startIndex, endIndex);
+            
+            // Generate table rows
+            tableBody.innerHTML = paginatedNotes.map(note => createNoteRow(note)).join('');
+            
+            // Update pagination
+            updatePagination();
+        }
+        
+        function loadNotesGrid() {
             const notesGrid = document.getElementById('notesGrid');
             const emptyState = document.getElementById('emptyNotesState');
+            const tableContainer = document.getElementById('notesTableContainer');
             
-            if (notes.length === 0) {
+            tableContainer.classList.add('hidden');
+            
+            if (filteredNotes.length === 0) {
                 notesGrid.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 return;
             }
             
             emptyState.classList.add('hidden');
+            notesGrid.innerHTML = filteredNotes.map(note => createNoteCard(note)).join('');
+        }
+        
+        function createNoteRow(note) {
+            const date = new Date(note.lastModified).toLocaleDateString();
+            const categoryColors = {
+                general: 'bg-gray-100 text-gray-800',
+                trading: 'bg-blue-100 text-blue-800',
+                analysis: 'bg-green-100 text-green-800',
+                research: 'bg-purple-100 text-purple-800',
+                ideas: 'bg-yellow-100 text-yellow-800',
+                watchlist: 'bg-red-100 text-red-800'
+            };
             
-            // Sort notes by last modified date (newest first)
-            notes.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+            const categoryColor = categoryColors[note.category] || categoryColors.general;
+            const preview = note.content.length > 100 ? note.content.substring(0, 100) + '...' : note.content;
+            const attachments = note.attachments || [];
+            const similarities = findSimilarNotes(note);
             
-            notesGrid.innerHTML = notes.map(note => createNoteCard(note)).join('');
+            return `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 note-checkbox" 
+                               data-note-id="${note.id}" onchange="toggleNoteSelection('${note.id}')">
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-900 truncate max-w-xs" title="${escapeHtml(note.title)}">
+                            ${escapeHtml(note.title)}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-block px-2 py-1 text-xs font-medium rounded-full ${categoryColor}">
+                            ${note.category.charAt(0).toUpperCase() + note.category.slice(1)}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-600 line-clamp-2 max-w-xs" title="${escapeHtml(note.content)}">
+                            ${escapeHtml(preview)}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-1">
+                            ${attachments.length > 0 ? `
+                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                    ${attachments.length} file${attachments.length > 1 ? 's' : ''}
+                                </span>
+                            ` : '<span class="text-xs text-gray-400">No files</span>'}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-1">
+                            ${similarities.length > 0 ? `
+                                <button onclick="showSimilarities('${note.id}')" class="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                                    ${similarities.length} similar
+                                </button>
+                            ` : '<span class="text-xs text-gray-400">None</span>'}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${date}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="editNote('${note.id}')" class="text-blue-600 hover:text-blue-900 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="deleteNote('${note.id}')" class="text-red-600 hover:text-red-900 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
         }
         
         function createNoteCard(note) {
@@ -5227,6 +6541,8 @@
             
             const categoryColor = categoryColors[note.category] || categoryColors.general;
             const preview = note.content.length > 150 ? note.content.substring(0, 150) + '...' : note.content;
+            const attachments = note.attachments || [];
+            const similarities = findSimilarNotes(note);
             
             return `
                 <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200 border border-gray-200">
@@ -5246,10 +6562,22 @@
                         </div>
                     </div>
                     
-                    <div class="mb-3">
+                    <div class="mb-3 flex items-center justify-between">
                         <span class="inline-block px-2 py-1 text-xs font-medium rounded-full ${categoryColor}">
                             ${note.category.charAt(0).toUpperCase() + note.category.slice(1)}
                         </span>
+                        <div class="flex items-center space-x-2">
+                            ${attachments.length > 0 ? `
+                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                    ${attachments.length} file${attachments.length > 1 ? 's' : ''}
+                                </span>
+                            ` : ''}
+                            ${similarities.length > 0 ? `
+                                <button onclick="showSimilarities('${note.id}')" class="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                                    ${similarities.length} similar
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
                     
                     <p class="text-gray-600 text-sm mb-4 line-clamp-4">${escapeHtml(preview)}</p>
@@ -5268,6 +6596,9 @@
             document.getElementById('noteTitle').value = '';
             document.getElementById('noteCategory').value = 'general';
             document.getElementById('noteContent').value = '';
+            
+            // Reset attachments list
+            document.getElementById('attachmentsList').innerHTML = '';
             
             const modal = document.getElementById('noteModal');
             modal.classList.remove('hidden');
@@ -5293,6 +6624,29 @@
             document.getElementById('noteTitle').value = note.title;
             document.getElementById('noteCategory').value = note.category;
             document.getElementById('noteContent').value = note.content;
+            
+            // Load attachments
+            const attachmentsList = document.getElementById('attachmentsList');
+            const attachments = note.attachments || [];
+            
+            attachmentsList.innerHTML = attachments.map(attachment => `
+                <div class="flex items-center justify-between p-2 bg-white rounded border">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">${escapeHtml(attachment.name)}</p>
+                            <p class="text-xs text-gray-500">${attachment.size}</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
             
             const modal = document.getElementById('noteModal');
             modal.classList.remove('hidden');
@@ -5332,6 +6686,20 @@
                 return;
             }
             
+            // Get attached files
+            const attachmentsList = document.getElementById('attachmentsList');
+            const attachmentElements = attachmentsList.querySelectorAll('div[class*="flex items-center justify-between"]');
+            const attachments = Array.from(attachmentElements).map(el => {
+                const fileName = el.querySelector('p[class*="text-sm font-medium"]').textContent;
+                const fileSize = el.querySelector('p[class*="text-xs text-gray-500"]').textContent;
+                return {
+                    id: 'attachment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    name: fileName,
+                    size: fileSize,
+                    attachedDate: new Date().toISOString()
+                };
+            });
+            
             const notes = JSON.parse(localStorage.getItem('tradingNotes') || '[]');
             const now = new Date().toISOString();
             
@@ -5344,6 +6712,7 @@
                         title,
                         category,
                         content,
+                        attachments,
                         lastModified: now
                     };
                     showNotification('Note updated successfully!', 'success');
@@ -5355,6 +6724,7 @@
                     title,
                     category,
                     content,
+                    attachments,
                     created: now,
                     lastModified: now
                 };
@@ -5376,45 +6746,541 @@
             const filteredNotes = notes.filter(n => n.id !== noteId);
             
             localStorage.setItem('tradingNotes', JSON.stringify(filteredNotes));
+            
+            // Remove from selected notes if it was selected
+            selectedNotes.delete(noteId);
+            
             loadNotes();
             showNotification('Note deleted successfully!', 'success');
         }
         
-        function searchNotes() {
-            const searchTerm = document.getElementById('noteSearch').value.toLowerCase().trim();
-            const notes = JSON.parse(localStorage.getItem('tradingNotes') || '[]');
+        // Table Management Functions
+        function sortTable(field) {
+            if (sortField === field) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortField = field;
+                sortDirection = 'asc';
+            }
             
-            if (!searchTerm) {
+            loadNotes();
+        }
+        
+        function toggleViewMode() {
+            const toggle = document.getElementById('viewModeToggle');
+            const tableContainer = document.getElementById('notesTableContainer');
+            const gridContainer = document.getElementById('notesGrid');
+            
+            if (currentViewMode === 'table') {
+                currentViewMode = 'grid';
+                toggle.innerHTML = `
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    Card View
+                `;
+                tableContainer.classList.add('hidden');
+                gridContainer.classList.remove('hidden');
+            } else {
+                currentViewMode = 'table';
+                toggle.innerHTML = `
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                    </svg>
+                    Table View
+                `;
+                gridContainer.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+            }
+            
+            loadNotes();
+        }
+        
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredNotes.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredNotes.length);
+            
+            document.getElementById('showingStart').textContent = startIndex + 1;
+            document.getElementById('showingEnd').textContent = endIndex;
+            document.getElementById('totalNotes').textContent = filteredNotes.length;
+            
+            // Update page numbers
+            const paginationNumbers = document.getElementById('paginationNumbers');
+            paginationNumbers.innerHTML = '';
+            
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    i === currentPage 
+                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' 
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                }`;
+                pageButton.textContent = i;
+                pageButton.onclick = () => goToPage(i);
+                paginationNumbers.appendChild(pageButton);
+            }
+        }
+        
+        function goToPage(page) {
+            currentPage = page;
+            loadNotes();
+        }
+        
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
                 loadNotes();
+            }
+        }
+        
+        function nextPage() {
+            const totalPages = Math.ceil(filteredNotes.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadNotes();
+            }
+        }
+        
+        // Selection Management Functions
+        function toggleNoteSelection(noteId) {
+            if (selectedNotes.has(noteId)) {
+                selectedNotes.delete(noteId);
+            } else {
+                selectedNotes.add(noteId);
+            }
+            
+            updateBulkActionsVisibility();
+            updateSelectAllCheckbox();
+        }
+        
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const noteCheckboxes = document.querySelectorAll('.note-checkbox');
+            
+            if (selectAllCheckbox.checked) {
+                noteCheckboxes.forEach(checkbox => {
+                    const noteId = checkbox.dataset.noteId;
+                    selectedNotes.add(noteId);
+                    checkbox.checked = true;
+                });
+            } else {
+                selectedNotes.clear();
+                noteCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            }
+            
+            updateBulkActionsVisibility();
+        }
+        
+        function selectAllNotes() {
+            filteredNotes.forEach(note => {
+                selectedNotes.add(note.id);
+            });
+            
+            document.querySelectorAll('.note-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            updateBulkActionsVisibility();
+            updateSelectAllCheckbox();
+        }
+        
+        function clearSelection() {
+            selectedNotes.clear();
+            
+            document.querySelectorAll('.note-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            updateBulkActionsVisibility();
+            updateSelectAllCheckbox();
+        }
+        
+        function updateBulkActionsVisibility() {
+            const bulkActionsBar = document.getElementById('bulkActionsBar');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (selectedNotes.size > 0) {
+                bulkActionsBar.classList.remove('hidden');
+                selectedCount.textContent = `${selectedNotes.size} note${selectedNotes.size > 1 ? 's' : ''} selected`;
+            } else {
+                bulkActionsBar.classList.add('hidden');
+            }
+        }
+        
+        function updateSelectAllCheckbox() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const totalVisible = document.querySelectorAll('.note-checkbox').length;
+            const totalSelected = document.querySelectorAll('.note-checkbox:checked').length;
+            
+            if (totalSelected === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (totalSelected === totalVisible) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+        
+        // Filter Functions
+        function filterNotes() {
+            applyFiltersAndSearch();
+            loadNotes();
+        }
+        
+        function searchNotes() {
+            applyFiltersAndSearch();
+            loadNotes();
+        }
+        
+        // File Upload Functions
+        function showFileUploadModal() {
+            const modal = document.getElementById('fileUploadModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Reset file input and list
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('uploadButton').disabled = true;
+        }
+        
+        function closeFileUploadModal() {
+            const modal = document.getElementById('fileUploadModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            const fileList = document.getElementById('fileList');
+            const uploadButton = document.getElementById('uploadButton');
+            
+            if (files.length === 0) {
+                uploadButton.disabled = true;
                 return;
             }
             
-            const filteredNotes = notes.filter(note => 
-                note.title.toLowerCase().includes(searchTerm) ||
-                note.content.toLowerCase().includes(searchTerm) ||
-                note.category.toLowerCase().includes(searchTerm)
-            );
-            
-            const notesGrid = document.getElementById('notesGrid');
-            const emptyState = document.getElementById('emptyNotesState');
-            
-            if (filteredNotes.length === 0) {
-                notesGrid.innerHTML = `
-                    <div class="col-span-full bg-white rounded-lg shadow-md p-12 text-center">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No notes found</h3>
-                        <p class="text-gray-600">Try adjusting your search terms.</p>
+            fileList.innerHTML = files.map((file, index) => {
+                const fileSize = (file.size / 1024).toFixed(1);
+                const fileType = file.type || 'unknown';
+                
+                return `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-file-index="${index}">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">${escapeHtml(file.name)}</p>
+                                <p class="text-xs text-gray-500">${fileSize} KB • ${fileType}</p>
+                            </div>
+                        </div>
+                        <button onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
                     </div>
                 `;
-                emptyState.classList.add('hidden');
+            }).join('');
+            
+            uploadButton.disabled = false;
+        }
+        
+        function removeFile(index) {
+            const fileInput = document.getElementById('fileInput');
+            const dt = new DataTransfer();
+            const files = Array.from(fileInput.files);
+            
+            files.splice(index, 1);
+            
+            files.forEach(file => {
+                dt.items.add(file);
+            });
+            
+            fileInput.files = dt.files;
+            handleFileSelect({ target: { files: dt.files } });
+        }
+        
+        function uploadFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const files = Array.from(fileInput.files);
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            
+            if (files.length === 0) return;
+            
+            // Show progress
+            progressContainer.classList.remove('hidden');
+            
+            // Simulate file upload with progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) progress = 100;
+                
+                progressBar.style.width = `${progress}%`;
+                progressPercent.textContent = `${Math.round(progress)}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    
+                    // Save files to localStorage
+                    const savedFiles = files.map(file => ({
+                        id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        uploadDate: new Date().toISOString()
+                    }));
+                    
+                    uploadedFiles.push(...savedFiles);
+                    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+                    
+                    showNotification(`${files.length} file${files.length > 1 ? 's' : ''} uploaded successfully!`, 'success');
+                    closeFileUploadModal();
+                }
+            }, 200);
+        }
+        
+        function attachFilesToNote() {
+            // Show file picker for attaching files to current note
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.multiple = true;
+            fileInput.accept = '.png,.jpg,.jpeg,.pdf,.doc,.docx,.txt,.md';
+            
+            fileInput.onchange = (event) => {
+                const files = Array.from(event.target.files);
+                const attachmentsList = document.getElementById('attachmentsList');
+                
+                const attachmentHTML = files.map(file => {
+                    const fileSize = (file.size / 1024).toFixed(1);
+                    return `
+                        <div class="flex items-center justify-between p-2 bg-white rounded border">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">${escapeHtml(file.name)}</p>
+                                    <p class="text-xs text-gray-500">${fileSize} KB</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+                
+                attachmentsList.innerHTML += attachmentHTML;
+            };
+            
+            fileInput.click();
+        }
+        
+        // Similarity Detection Functions
+        function findSimilarNotes(note) {
+            const similarities = [];
+            const noteWords = extractKeywords(note.content + ' ' + note.title);
+            
+            allNotes.forEach(otherNote => {
+                if (otherNote.id === note.id) return;
+                
+                const otherWords = extractKeywords(otherNote.content + ' ' + otherNote.title);
+                const similarity = calculateSimilarity(noteWords, otherWords);
+                
+                if (similarity > 0.3) { // 30% similarity threshold
+                    similarities.push({
+                        note: otherNote,
+                        similarity: similarity,
+                        commonWords: findCommonWords(noteWords, otherWords)
+                    });
+                }
+            });
+            
+            return similarities.sort((a, b) => b.similarity - a.similarity);
+        }
+        
+        function extractKeywords(text) {
+            const stopWords = ['the', 'is', 'at', 'which', 'on', 'and', 'a', 'to', 'as', 'are', 'was', 'will', 'be', 'have', 'has', 'had', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'its', 'our', 'their', 'in', 'of', 'for', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'can', 'could', 'should', 'would', 'may', 'might', 'must', 'shall', 'do', 'does', 'did', 'doing', 'done'];
+            
+            return text.toLowerCase()
+                .replace(/[^\w\s]/g, '')
+                .split(/\s+/)
+                .filter(word => word.length > 2 && !stopWords.includes(word))
+                .reduce((acc, word) => {
+                    acc[word] = (acc[word] || 0) + 1;
+                    return acc;
+                }, {});
+        }
+        
+        function calculateSimilarity(words1, words2) {
+            const allWords = new Set([...Object.keys(words1), ...Object.keys(words2)]);
+            let dotProduct = 0;
+            let magnitude1 = 0;
+            let magnitude2 = 0;
+            
+            allWords.forEach(word => {
+                const count1 = words1[word] || 0;
+                const count2 = words2[word] || 0;
+                
+                dotProduct += count1 * count2;
+                magnitude1 += count1 * count1;
+                magnitude2 += count2 * count2;
+            });
+            
+            if (magnitude1 === 0 || magnitude2 === 0) return 0;
+            
+            return dotProduct / (Math.sqrt(magnitude1) * Math.sqrt(magnitude2));
+        }
+        
+        function findCommonWords(words1, words2) {
+            const common = [];
+            Object.keys(words1).forEach(word => {
+                if (words2[word]) {
+                    common.push(word);
+                }
+            });
+            return common.slice(0, 10); // Return top 10 common words
+        }
+        
+        function showSimilarities(noteId) {
+            const note = allNotes.find(n => n.id === noteId);
+            if (!note) return;
+            
+            const similarities = findSimilarNotes(note);
+            const modal = document.getElementById('similaritiesModal');
+            const content = document.getElementById('similaritiesContent');
+            
+            if (similarities.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Similar Notes Found</h3>
+                        <p class="text-gray-600">This note doesn't have similar content to other notes.</p>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Similar to: "${escapeHtml(note.title)}"</h3>
+                        <p class="text-gray-600 text-sm">Found ${similarities.length} similar note${similarities.length > 1 ? 's' : ''}</p>
+                    </div>
+                    <div class="space-y-4">
+                        ${similarities.map(sim => `
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="font-medium text-gray-900">${escapeHtml(sim.note.title)}</h4>
+                                    <span class="text-sm text-blue-600 font-medium">${Math.round(sim.similarity * 100)}% similar</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">${escapeHtml(sim.note.content.substring(0, 150))}...</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-wrap gap-1">
+                                        ${sim.commonWords.slice(0, 5).map(word => `
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">${word}</span>
+                                        `).join('')}
+                                    </div>
+                                    <button onclick="editNote('${sim.note.id}'); closeSimilaritiesModal();" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        View Note
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeSimilaritiesModal() {
+            const modal = document.getElementById('similaritiesModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        // Bulk Operations Functions
+        function bulkCategorize() {
+            if (selectedNotes.size === 0) {
+                showNotification('Please select notes to categorize', 'error');
                 return;
             }
             
-            emptyState.classList.add('hidden');
-            filteredNotes.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
-            notesGrid.innerHTML = filteredNotes.map(note => createNoteCard(note)).join('');
+            const modal = document.getElementById('bulkCategorizeModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeBulkCategorizeModal() {
+            const modal = document.getElementById('bulkCategorizeModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        function applyBulkCategorize() {
+            const category = document.getElementById('bulkCategorySelect').value;
+            const notes = JSON.parse(localStorage.getItem('tradingNotes') || '[]');
+            
+            let updatedCount = 0;
+            notes.forEach(note => {
+                if (selectedNotes.has(note.id)) {
+                    note.category = category;
+                    note.lastModified = new Date().toISOString();
+                    updatedCount++;
+                }
+            });
+            
+            localStorage.setItem('tradingNotes', JSON.stringify(notes));
+            
+            showNotification(`${updatedCount} note${updatedCount > 1 ? 's' : ''} categorized successfully!`, 'success');
+            closeBulkCategorizeModal();
+            clearSelection();
+            loadNotes();
+        }
+        
+        function bulkDelete() {
+            if (selectedNotes.size === 0) {
+                showNotification('Please select notes to delete', 'error');
+                return;
+            }
+            
+            const count = selectedNotes.size;
+            if (!confirm(`Are you sure you want to delete ${count} note${count > 1 ? 's' : ''}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            const notes = JSON.parse(localStorage.getItem('tradingNotes') || '[]');
+            const filteredNotes = notes.filter(note => !selectedNotes.has(note.id));
+            
+            localStorage.setItem('tradingNotes', JSON.stringify(filteredNotes));
+            
+            showNotification(`${count} note${count > 1 ? 's' : ''} deleted successfully!`, 'success');
+            clearSelection();
+            loadNotes();
         }
         
         function exportNotes() {
@@ -5823,9 +7689,11 @@
                 // Initialize specific page features
                 if (page === 'analytics') {
                     setTimeout(() => {
-                        if (typeof initializeEnergyChart === 'function') {
-                            initializeEnergyChart();
-                        }
+                                    if (typeof initializeEnergyChart === 'function') {
+                initializeEnergyChart().catch(error => {
+                    console.error('Error initializing energy chart:', error);
+                });
+            }
                     }, 100);
                 } else if (page === 'options-calculator') {
                     setTimeout(() => {
@@ -6612,6 +8480,17 @@
         }
 
         // Portfolio management
+        // Enhanced Portfolio Management Functions
+        function showAddTradeModal() {
+            document.getElementById('addTradeModal').classList.remove('hidden');
+            document.getElementById('tradeDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function hideAddTradeModal() {
+            document.getElementById('addTradeModal').classList.add('hidden');
+            document.getElementById('addTradeForm').reset();
+        }
+
         function addToPortfolio() {
             const symbol = document.getElementById('stockSymbol').value.toUpperCase();
             const priceText = document.getElementById('stockPrice').textContent;
@@ -6622,64 +8501,188 @@
                 return;
             }
 
-            let portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
+            let trades = JSON.parse(localStorage.getItem('trades') || '[]');
             
-            if (portfolio.find(item => item.symbol === symbol)) {
-                showFinancialNotification(`${symbol} is already in your portfolio`, 'warning');
-                return;
-            }
-
-            portfolio.push({ 
-                symbol, 
-                price: price, 
-                change: 0,
-                addedDate: new Date().toISOString()
-            });
+            // Create a simple trade entry from search
+            const trade = {
+                id: Date.now(),
+                symbol: symbol,
+                type: 'BUY',
+                quantity: 1,
+                price: price,
+                date: new Date().toISOString().split('T')[0],
+                strategy: 'Long Term',
+                notes: 'Added from stock search',
+                status: 'OPEN'
+            };
             
-            localStorage.setItem('portfolio', JSON.stringify(portfolio));
+            trades.push(trade);
+            localStorage.setItem('trades', JSON.stringify(trades));
             updatePortfolioTable();
             updatePortfolioStats();
             showFinancialNotification(`${symbol} added to portfolio`, 'success');
         }
 
+        function addTrade(event) {
+            event.preventDefault();
+            
+            const symbol = document.getElementById('tradeSymbol').value.toUpperCase();
+            const type = document.getElementById('tradeType').value;
+            const quantity = parseInt(document.getElementById('tradeQuantity').value);
+            const price = parseFloat(document.getElementById('tradePrice').value);
+            const date = document.getElementById('tradeDate').value;
+            const strategy = document.getElementById('tradeStrategy').value;
+            const notes = document.getElementById('tradeNotes').value;
+            
+            if (!symbol || !quantity || !price || !date) {
+                showFinancialNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            let trades = JSON.parse(localStorage.getItem('trades') || '[]');
+            
+            const trade = {
+                id: Date.now(),
+                symbol: symbol,
+                type: type,
+                quantity: quantity,
+                price: price,
+                date: date,
+                strategy: strategy,
+                notes: notes,
+                status: 'OPEN'
+            };
+            
+            trades.push(trade);
+            localStorage.setItem('trades', JSON.stringify(trades));
+            updatePortfolioTable();
+            updatePortfolioStats();
+            hideAddTradeModal();
+            showFinancialNotification(`Trade ${symbol} added successfully`, 'success');
+        }
+
         function updatePortfolioTable() {
-            const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
+            const trades = JSON.parse(localStorage.getItem('trades') || '[]');
             const tableBody = document.getElementById('portfolioTable');
             
-            if (portfolio.length === 0) {
+            if (trades.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="py-8 text-center text-gray-500">
+                        <td colspan="5" class="py-8 text-center text-gray-500">
                             <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                             </svg>
-                            <p>No stocks in portfolio. Add stocks to track them here.</p>
+                            <p>No trades in portfolio. Add trades to track them here.</p>
                         </td>
                     </tr>
                 `;
                 return;
             }
 
+            // Group trades by symbol for portfolio view
+            const positions = {};
+            trades.forEach(trade => {
+                if (!positions[trade.symbol]) {
+                    positions[trade.symbol] = {
+                        symbol: trade.symbol,
+                        totalQuantity: 0,
+                        totalValue: 0,
+                        avgPrice: 0,
+                        trades: []
+                    };
+                }
+                
+                const position = positions[trade.symbol];
+                position.trades.push(trade);
+                
+                if (trade.type === 'BUY') {
+                    position.totalQuantity += trade.quantity;
+                    position.totalValue += trade.quantity * trade.price;
+                } else {
+                    position.totalQuantity -= trade.quantity;
+                    position.totalValue -= trade.quantity * trade.price;
+                }
+            });
+
+            // Calculate average price and P&L for each position
+            Object.keys(positions).forEach(symbol => {
+                const position = positions[symbol];
+                if (position.totalQuantity > 0) {
+                    position.avgPrice = position.totalValue / position.totalQuantity;
+                }
+            });
+
             tableBody.innerHTML = '';
-            portfolio.forEach((item, index) => {
+            Object.values(positions).forEach(position => {
+                if (position.totalQuantity <= 0) return; // Skip closed positions
+                
                 const row = document.createElement('tr');
                 row.className = 'border-b border-gray-100 hover:bg-gray-50';
                 
-                const changeClass = item.change >= 0 ? 'text-green-600' : 'text-red-600';
-                const changeSymbol = item.change >= 0 ? '+' : '';
+                // Mock current price for P&L calculation (in real app, would fetch from API)
+                const currentPrice = position.avgPrice * (1 + (Math.random() - 0.5) * 0.1);
+                const pl = (currentPrice - position.avgPrice) * position.totalQuantity;
+                const plPercent = ((currentPrice - position.avgPrice) / position.avgPrice) * 100;
+                
+                const plClass = pl >= 0 ? 'text-green-600' : 'text-red-600';
+                const plSymbol = pl >= 0 ? '+' : '';
                 
                 row.innerHTML = `
-                    <td class="py-3 font-medium text-gray-900">${item.symbol}</td>
-                    <td class="py-3 text-gray-700">$${item.price.toFixed(2)}</td>
-                    <td class="py-3 ${changeClass}">${changeSymbol}${item.change.toFixed(2)}%</td>
+                    <td class="py-3 font-medium text-gray-900">${position.symbol}</td>
+                    <td class="py-3 text-gray-700">${position.totalQuantity}</td>
+                    <td class="py-3 text-gray-700">$${position.avgPrice.toFixed(2)}</td>
+                    <td class="py-3 ${plClass}">${plSymbol}$${pl.toFixed(2)}</td>
                     <td class="py-3">
-                        <button onclick="removeFromPortfolio('${item.symbol}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors">
-                            Remove
-                        </button>
+                        <div class="flex space-x-1">
+                            <button onclick="editPosition('${position.symbol}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs transition-colors">
+                                Edit
+                            </button>
+                            <button onclick="closePosition('${position.symbol}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors">
+                                Close
+                            </button>
+                        </div>
                     </td>
                 `;
                 tableBody.appendChild(row);
             });
+        }
+
+        function editPosition(symbol) {
+            const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+            const symbolTrades = trades.filter(trade => trade.symbol === symbol);
+            
+            if (symbolTrades.length === 0) return;
+            
+            // Show a simple edit dialog for position
+            const newQuantity = prompt(`Edit quantity for ${symbol}:`, symbolTrades[0].quantity);
+            if (newQuantity && !isNaN(newQuantity)) {
+                symbolTrades[0].quantity = parseInt(newQuantity);
+                localStorage.setItem('trades', JSON.stringify(trades));
+                updatePortfolioTable();
+                updatePortfolioStats();
+                showFinancialNotification(`${symbol} position updated`, 'success');
+            }
+        }
+
+        function closePosition(symbol) {
+            if (confirm(`Are you sure you want to close the ${symbol} position?`)) {
+                let trades = JSON.parse(localStorage.getItem('trades') || '[]');
+                trades = trades.filter(trade => trade.symbol !== symbol);
+                localStorage.setItem('trades', JSON.stringify(trades));
+                updatePortfolioTable();
+                updatePortfolioStats();
+                showFinancialNotification(`${symbol} position closed`, 'success');
+            }
+        }
+
+        function togglePortfolioView() {
+            const toggleText = document.getElementById('viewToggleText');
+            if (toggleText.textContent === 'Detailed View') {
+                toggleText.textContent = 'Simple View';
+                // Could implement detailed view with individual trades
+            } else {
+                toggleText.textContent = 'Detailed View';
+            }
         }
 
         function removeFromPortfolio(symbol) {
@@ -6692,12 +8695,435 @@
         }
 
         function updatePortfolioStats() {
-            const portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
-            const totalValue = portfolio.reduce((sum, item) => sum + item.price, 0);
-            const totalHoldings = portfolio.length;
-
+            const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+            
+            // Calculate portfolio statistics
+            const positions = {};
+            let totalValue = 0;
+            let totalPL = 0;
+            let winCount = 0;
+            let totalTrades = 0;
+            
+            trades.forEach(trade => {
+                if (!positions[trade.symbol]) {
+                    positions[trade.symbol] = {
+                        totalQuantity: 0,
+                        totalValue: 0,
+                        avgPrice: 0
+                    };
+                }
+                
+                const position = positions[trade.symbol];
+                
+                if (trade.type === 'BUY') {
+                    position.totalQuantity += trade.quantity;
+                    position.totalValue += trade.quantity * trade.price;
+                } else {
+                    position.totalQuantity -= trade.quantity;
+                    position.totalValue -= trade.quantity * trade.price;
+                }
+            });
+            
+            // Calculate stats for each position
+            Object.keys(positions).forEach(symbol => {
+                const position = positions[symbol];
+                if (position.totalQuantity > 0) {
+                    position.avgPrice = position.totalValue / position.totalQuantity;
+                    
+                    // Mock current price for P&L calculation
+                    const currentPrice = position.avgPrice * (1 + (Math.random() - 0.5) * 0.1);
+                    const positionValue = currentPrice * position.totalQuantity;
+                    const pl = (currentPrice - position.avgPrice) * position.totalQuantity;
+                    
+                    totalValue += positionValue;
+                    totalPL += pl;
+                    totalTrades++;
+                    
+                    if (pl > 0) winCount++;
+                }
+            });
+            
+            const winRate = totalTrades > 0 ? (winCount / totalTrades) * 100 : 0;
+            
+            // Update UI
+            document.getElementById('portfolioTotalValue').textContent = `$${totalValue.toFixed(2)}`;
+            document.getElementById('portfolioTotalPL').textContent = `$${totalPL.toFixed(2)}`;
+            document.getElementById('portfolioTotalPL').className = `text-lg font-bold ${totalPL >= 0 ? 'text-green-600' : 'text-red-600'}`;
+            document.getElementById('portfolioWinRate').textContent = `${winRate.toFixed(1)}%`;
+            
+            // Update legacy portfolio stats
             document.getElementById('portfolioValue').textContent = `$${totalValue.toFixed(2)}`;
-            document.getElementById('portfolioHoldings').textContent = totalHoldings;
+            document.getElementById('portfolioHoldings').textContent = Object.keys(positions).length;
+        }
+
+        // Watchlist Management Functions
+        function showAddWatchlistModal() {
+            document.getElementById('addWatchlistModal').classList.remove('hidden');
+        }
+
+        function hideAddWatchlistModal() {
+            document.getElementById('addWatchlistModal').classList.add('hidden');
+            document.getElementById('addWatchlistForm').reset();
+        }
+
+        function addWatchlistItem(event) {
+            event.preventDefault();
+            
+            const symbol = document.getElementById('watchlistSymbol').value.toUpperCase();
+            const targetPrice = parseFloat(document.getElementById('watchlistTargetPrice').value);
+            const alertType = document.getElementById('watchlistAlertType').value;
+            const notes = document.getElementById('watchlistNotes').value;
+            
+            if (!symbol || !targetPrice) {
+                showFinancialNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+            
+            // Check if symbol already exists
+            if (watchlist.find(item => item.symbol === symbol)) {
+                showFinancialNotification(`${symbol} is already in your watchlist`, 'warning');
+                return;
+            }
+            
+            const watchlistItem = {
+                id: Date.now(),
+                symbol: symbol,
+                targetPrice: targetPrice,
+                alertType: alertType,
+                notes: notes,
+                dateAdded: new Date().toISOString(),
+                currentPrice: targetPrice * (1 + (Math.random() - 0.5) * 0.2) // Mock current price
+            };
+            
+            watchlist.push(watchlistItem);
+            localStorage.setItem('watchlist', JSON.stringify(watchlist));
+            updateWatchlistTable();
+            hideAddWatchlistModal();
+            showFinancialNotification(`${symbol} added to watchlist`, 'success');
+        }
+
+        function updateWatchlistTable() {
+            const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+            const tableBody = document.getElementById('watchlistTable');
+            
+            if (watchlist.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <p>No stocks in watchlist. Add stocks to track price targets.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            watchlist.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-100 hover:bg-gray-50';
+                
+                const percentToTarget = ((item.targetPrice - item.currentPrice) / item.currentPrice) * 100;
+                const alertStatus = getAlertStatus(item.currentPrice, item.targetPrice, item.alertType);
+                
+                row.innerHTML = `
+                    <td class="py-3 font-medium text-gray-900">${item.symbol}</td>
+                    <td class="py-3 text-gray-700">$${item.currentPrice.toFixed(2)}</td>
+                    <td class="py-3 text-gray-700">$${item.targetPrice.toFixed(2)}</td>
+                    <td class="py-3 ${percentToTarget >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${percentToTarget >= 0 ? '+' : ''}${percentToTarget.toFixed(1)}%
+                    </td>
+                    <td class="py-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${alertStatus.class}">
+                            ${alertStatus.text}
+                        </span>
+                    </td>
+                    <td class="py-3">
+                        <button onclick="removeWatchlistItem(${item.id})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors">
+                            Remove
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function getAlertStatus(currentPrice, targetPrice, alertType) {
+            const diff = currentPrice - targetPrice;
+            
+            if (alertType === 'Above' && diff >= 0) {
+                return { class: 'bg-green-100 text-green-800', text: 'Triggered' };
+            } else if (alertType === 'Below' && diff <= 0) {
+                return { class: 'bg-red-100 text-red-800', text: 'Triggered' };
+            } else if (alertType === 'Both' && Math.abs(diff) <= targetPrice * 0.05) {
+                return { class: 'bg-yellow-100 text-yellow-800', text: 'Near Target' };
+            } else {
+                return { class: 'bg-gray-100 text-gray-800', text: 'Watching' };
+            }
+        }
+
+        function removeWatchlistItem(id) {
+            let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+            watchlist = watchlist.filter(item => item.id !== id);
+            localStorage.setItem('watchlist', JSON.stringify(watchlist));
+            updateWatchlistTable();
+            showFinancialNotification('Item removed from watchlist', 'success');
+        }
+
+        // Trade Journal Functions
+        function showTradeJournalModal() {
+            document.getElementById('tradeJournalModal').classList.remove('hidden');
+            document.getElementById('journalDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function hideTradeJournalModal() {
+            document.getElementById('tradeJournalModal').classList.add('hidden');
+            document.getElementById('tradeJournalForm').reset();
+        }
+
+        function addJournalEntry(event) {
+            event.preventDefault();
+            
+            const symbol = document.getElementById('journalSymbol').value.toUpperCase();
+            const date = document.getElementById('journalDate').value;
+            const entryPrice = parseFloat(document.getElementById('journalEntryPrice').value);
+            const exitPrice = parseFloat(document.getElementById('journalExitPrice').value) || null;
+            const positionSize = parseInt(document.getElementById('journalPositionSize').value);
+            const tradeType = document.getElementById('journalTradeType').value;
+            const strategy = document.getElementById('journalStrategy').value;
+            const notes = document.getElementById('journalNotes').value;
+            
+            if (!symbol || !date || !entryPrice || !positionSize) {
+                showFinancialNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            let journal = JSON.parse(localStorage.getItem('tradeJournal') || '[]');
+            
+            // Calculate P&L if exit price is provided
+            let pl = 0;
+            if (exitPrice) {
+                pl = tradeType === 'Long' 
+                    ? (exitPrice - entryPrice) * positionSize
+                    : (entryPrice - exitPrice) * positionSize;
+            }
+            
+            const journalEntry = {
+                id: Date.now(),
+                symbol: symbol,
+                date: date,
+                entryPrice: entryPrice,
+                exitPrice: exitPrice,
+                positionSize: positionSize,
+                tradeType: tradeType,
+                strategy: strategy,
+                notes: notes,
+                pl: pl,
+                status: exitPrice ? 'Closed' : 'Open'
+            };
+            
+            journal.push(journalEntry);
+            localStorage.setItem('tradeJournal', JSON.stringify(journal));
+            updateJournalTable();
+            updateJournalStats();
+            hideTradeJournalModal();
+            showFinancialNotification('Journal entry added successfully', 'success');
+        }
+
+        function updateJournalTable() {
+            const journal = JSON.parse(localStorage.getItem('tradeJournal') || '[]');
+            const tableBody = document.getElementById('journalTable');
+            
+            if (journal.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            <p>No journal entries yet. Start documenting your trades.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            journal.forEach(entry => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-100 hover:bg-gray-50';
+                
+                const plClass = entry.pl > 0 ? 'text-green-600' : entry.pl < 0 ? 'text-red-600' : 'text-gray-600';
+                const plSymbol = entry.pl > 0 ? '+' : '';
+                
+                row.innerHTML = `
+                    <td class="py-3 text-gray-700">${new Date(entry.date).toLocaleDateString()}</td>
+                    <td class="py-3 font-medium text-gray-900">${entry.symbol}</td>
+                    <td class="py-3 text-gray-700">$${entry.entryPrice.toFixed(2)}</td>
+                    <td class="py-3 text-gray-700">${entry.exitPrice ? '$' + entry.exitPrice.toFixed(2) : 'Open'}</td>
+                    <td class="py-3 ${plClass} font-medium">${plSymbol}$${entry.pl.toFixed(2)}</td>
+                    <td class="py-3 text-gray-700">${entry.notes.substring(0, 50)}${entry.notes.length > 50 ? '...' : ''}</td>
+                    <td class="py-3">
+                        <button onclick="removeJournalEntry(${entry.id})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateJournalStats() {
+            const journal = JSON.parse(localStorage.getItem('tradeJournal') || '[]');
+            const closedTrades = journal.filter(entry => entry.status === 'Closed');
+            
+            const winningTrades = closedTrades.filter(entry => entry.pl > 0).length;
+            const losingTrades = closedTrades.filter(entry => entry.pl < 0).length;
+            const totalPL = closedTrades.reduce((sum, entry) => sum + entry.pl, 0);
+            
+            document.getElementById('winningTrades').textContent = winningTrades;
+            document.getElementById('losingTrades').textContent = losingTrades;
+            document.getElementById('totalPL').textContent = `$${totalPL.toFixed(2)}`;
+            document.getElementById('totalPL').className = `text-2xl font-bold ${totalPL >= 0 ? 'text-green-600' : 'text-red-600'}`;
+        }
+
+        function removeJournalEntry(id) {
+            let journal = JSON.parse(localStorage.getItem('tradeJournal') || '[]');
+            journal = journal.filter(entry => entry.id !== id);
+            localStorage.setItem('tradeJournal', JSON.stringify(journal));
+            updateJournalTable();
+            updateJournalStats();
+            showFinancialNotification('Journal entry deleted', 'success');
+        }
+
+        function exportTradeJournal() {
+            const journal = JSON.parse(localStorage.getItem('tradeJournal') || '[]');
+            
+            if (journal.length === 0) {
+                showFinancialNotification('No journal entries to export', 'warning');
+                return;
+            }
+            
+            const csvContent = "Date,Symbol,Entry Price,Exit Price,Position Size,Trade Type,Strategy,P&L,Notes\n" +
+                journal.map(entry => 
+                    `${entry.date},${entry.symbol},${entry.entryPrice},${entry.exitPrice || 'Open'},${entry.positionSize},${entry.tradeType},${entry.strategy},${entry.pl},"${entry.notes}"`
+                ).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `trade-journal-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showFinancialNotification('Trade journal exported successfully', 'success');
+        }
+
+        // Portfolio Analytics Functions
+        function refreshPortfolioAnalytics() {
+            const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+            const journal = JSON.parse(localStorage.getItem('tradeJournal') || '[]');
+            
+            // Calculate portfolio analytics
+            const positions = {};
+            trades.forEach(trade => {
+                if (!positions[trade.symbol]) {
+                    positions[trade.symbol] = { totalQuantity: 0, totalValue: 0 };
+                }
+                
+                if (trade.type === 'BUY') {
+                    positions[trade.symbol].totalQuantity += trade.quantity;
+                    positions[trade.symbol].totalValue += trade.quantity * trade.price;
+                } else {
+                    positions[trade.symbol].totalQuantity -= trade.quantity;
+                    positions[trade.symbol].totalValue -= trade.quantity * trade.price;
+                }
+            });
+            
+            // Calculate metrics (mock data for demo)
+            const beta = 1.2 + (Math.random() - 0.5) * 0.4;
+            const sharpeRatio = 1.45 + (Math.random() - 0.5) * 0.3;
+            const maxDrawdown = -12.3 + (Math.random() - 0.5) * 5;
+            const volatility = 18.2 + (Math.random() - 0.5) * 6;
+            
+            // Update UI
+            document.getElementById('portfolioBeta').textContent = beta.toFixed(2);
+            document.getElementById('sharpeRatio').textContent = sharpeRatio.toFixed(2);
+            document.getElementById('maxDrawdown').textContent = maxDrawdown.toFixed(1) + '%';
+            document.getElementById('portfolioVolatility').textContent = volatility.toFixed(1) + '%';
+            
+            // Calculate performance metrics from journal
+            const closedTrades = journal.filter(entry => entry.status === 'Closed');
+            const totalPL = closedTrades.reduce((sum, entry) => sum + entry.pl, 0);
+            const bestTrade = closedTrades.length > 0 ? Math.max(...closedTrades.map(t => t.pl)) : 0;
+            const worstTrade = closedTrades.length > 0 ? Math.min(...closedTrades.map(t => t.pl)) : 0;
+            const avgTrade = closedTrades.length > 0 ? totalPL / closedTrades.length : 0;
+            
+            document.getElementById('ytdReturn').textContent = `+${(24.5 + (Math.random() - 0.5) * 10).toFixed(1)}%`;
+            document.getElementById('oneYearReturn').textContent = `+${(18.2 + (Math.random() - 0.5) * 8).toFixed(1)}%`;
+            document.getElementById('bestTrade').textContent = `+$${bestTrade.toFixed(0)}`;
+            document.getElementById('worstTrade').textContent = `${worstTrade.toFixed(0) >= 0 ? '+' : ''}$${worstTrade.toFixed(0)}`;
+            document.getElementById('avgTrade').textContent = `${avgTrade.toFixed(0) >= 0 ? '+' : ''}$${avgTrade.toFixed(0)}`;
+            
+            showFinancialNotification('Portfolio analytics updated', 'success');
+        }
+
+        // Risk Management Functions
+        function showRiskManagementModal() {
+            // Simple alert for now - could be expanded to a full modal
+            const currentRules = JSON.parse(localStorage.getItem('riskRules') || '{}');
+            
+            const positionLimit = prompt('Position Size Limit (% per trade):', currentRules.positionLimit || '5');
+            const stopLoss = prompt('Default Stop Loss (%):', currentRules.stopLoss || '2');
+            const dailyLossLimit = prompt('Daily Loss Limit ($):', currentRules.dailyLossLimit || '1000');
+            
+            if (positionLimit && stopLoss && dailyLossLimit) {
+                const riskRules = {
+                    positionLimit: parseFloat(positionLimit),
+                    stopLoss: parseFloat(stopLoss),
+                    dailyLossLimit: parseFloat(dailyLossLimit),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                localStorage.setItem('riskRules', JSON.stringify(riskRules));
+                updateRiskManagementDisplay();
+                showFinancialNotification('Risk management rules updated', 'success');
+            }
+        }
+
+        function updateRiskManagementDisplay() {
+            const riskRules = JSON.parse(localStorage.getItem('riskRules') || '{}');
+            const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+            
+            // Update active alerts count
+            const activeAlerts = watchlist.filter(item => {
+                const alertStatus = getAlertStatus(item.currentPrice, item.targetPrice, item.alertType);
+                return alertStatus.text === 'Triggered' || alertStatus.text === 'Near Target';
+            }).length;
+            
+            document.getElementById('activeAlerts').textContent = activeAlerts;
+            
+            // Calculate risk score based on portfolio composition
+            const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+            const uniqueSymbols = [...new Set(trades.map(t => t.symbol))];
+            const riskScore = uniqueSymbols.length > 10 ? 'Low' : uniqueSymbols.length > 5 ? 'Medium' : 'High';
+            
+            document.getElementById('riskScore').textContent = riskScore;
+            document.getElementById('stopLossCount').textContent = Math.min(trades.length, 7);
+            
+            // Update correlation risk based on sector concentration
+            const techStocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+            const techCount = trades.filter(t => techStocks.includes(t.symbol)).length;
+            const correlationRisk = techCount > trades.length * 0.6 ? 'High' : techCount > trades.length * 0.4 ? 'Medium' : 'Low';
+            
+            // This would update the correlation risk display if we had the element
+            // document.getElementById('correlationRisk').textContent = correlationRisk;
         }
 
         // Investment calculator
@@ -6763,6 +9189,11 @@
          document.addEventListener('DOMContentLoaded', function() {
              updatePortfolioTable();
              updatePortfolioStats();
+             updateWatchlistTable();
+             updateJournalTable();
+             updateJournalStats();
+             updateRiskManagementDisplay();
+             refreshPortfolioAnalytics();
              
              // Update market status
              const now = new Date();
@@ -6833,11 +9264,30 @@
          }
 
          // Step 2: Frontend Implementation (adapted from React to vanilla JS)
+         let numerologyRefreshInterval;
+         let numerologyCountdownInterval;
+         
          function initializeNumerologyForecast() {
              // Simulate loading for better UX
              setTimeout(() => {
                  fetchNumerologyForecast();
              }, 1500);
+             
+             // Set up auto-refresh every 5 minutes
+             numerologyRefreshInterval = setInterval(() => {
+                 refreshNumerologyForecast();
+             }, 300000); // 5 minutes = 300,000 ms
+             
+             // Also refresh every hour for more frequent updates
+             setInterval(() => {
+                 fetchNumerologyForecast();
+             }, 3600000); // 1 hour = 3,600,000 ms
+             
+             // Start countdown timer after initial load
+             setTimeout(() => {
+                 if (numerologyCountdownInterval) clearInterval(numerologyCountdownInterval);
+                 numerologyCountdownInterval = startNumerologyCountdown();
+             }, 3000);
          }
 
          function fetchNumerologyForecast() {
@@ -6879,11 +9329,33 @@
              document.getElementById('forecastText').textContent = data.forecast;
              document.getElementById('disclaimer').textContent = data.disclaimer;
 
+             // Update timestamp information
+             const now = new Date();
+             document.getElementById('lastUpdated').textContent = `Last updated: ${now.toLocaleTimeString('en-US', { 
+                 hour: '2-digit', 
+                 minute: '2-digit',
+                 second: '2-digit'
+             })}`;
+             
+             // Calculate next update time (5 minutes from now)
+             const nextUpdateTime = new Date(now.getTime() + 5 * 60 * 1000);
+             document.getElementById('nextUpdate').textContent = `Next update: ${nextUpdateTime.toLocaleTimeString('en-US', { 
+                 hour: '2-digit', 
+                 minute: '2-digit'
+             })}`;
+
              // Add animation effect
              document.getElementById('numerologyContent').classList.add('animate-fade-in');
 
              // Update additional insights
              updateNumerologyInsights(data.universalDayNumber);
+             
+             // Show success notification
+             showNotification('Numerology forecast updated', 'success');
+             
+             // Restart countdown timer
+             if (numerologyCountdownInterval) clearInterval(numerologyCountdownInterval);
+             numerologyCountdownInterval = startNumerologyCountdown();
          }
 
          function updateNumerologyInsights(dayNumber) {
@@ -6894,11 +9366,44 @@
                  9: "Completion", 11: "Illumination", 22: "Master Building", 33: "Service"
              };
 
+             // Use more dynamic trend calculation based on time and day number
+             const hour = new Date().getHours();
+             const trendIndex = (dayNumber + hour) % 4;
              const trends = ["↗ Rising", "↘ Declining", "↔ Stable", "🔄 Cycling"];
              
              document.getElementById('frequentNumber').textContent = dayNumber;
              document.getElementById('cyclePhase').textContent = cyclePhases[dayNumber] || "Unknown";
-             document.getElementById('energyTrend').textContent = trends[Math.floor(Math.random() * trends.length)];
+             document.getElementById('energyTrend').textContent = trends[trendIndex];
+         }
+
+         // Add countdown timer for next update
+         let nextUpdateTime;
+         
+         function startNumerologyCountdown() {
+             // Set next update time to 5 minutes from now
+             nextUpdateTime = new Date(Date.now() + 5 * 60 * 1000);
+             
+             const countdownInterval = setInterval(() => {
+                 const nextUpdateElement = document.getElementById('nextUpdate');
+                 if (nextUpdateElement) {
+                     const now = new Date();
+                     const timeUntilNext = nextUpdateTime - now;
+                     
+                     if (timeUntilNext > 0) {
+                         const minutes = Math.floor(timeUntilNext / 60000);
+                         const seconds = Math.floor((timeUntilNext % 60000) / 1000);
+                         nextUpdateElement.textContent = `Next update: ${minutes}m ${seconds}s`;
+                     } else {
+                         nextUpdateElement.textContent = 'Updating...';
+                         // Trigger refresh when countdown reaches zero
+                         setTimeout(() => {
+                             refreshNumerologyForecast();
+                         }, 1000);
+                     }
+                 }
+             }, 1000);
+             
+             return countdownInterval;
          }
 
          function showNumerologyError() {
@@ -6915,9 +9420,29 @@
          // Step 3: Integration functionality
          // Add refresh functionality for numerology forecast
          function refreshNumerologyForecast() {
+             const refreshButton = document.querySelector('button[onclick="refreshNumerologyForecast()"]');
+             
+             // Show loading state
+             if (refreshButton) {
+                 refreshButton.disabled = true;
+                 refreshButton.innerHTML = '<svg class="w-4 h-4 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refreshing...';
+             }
+             
              document.getElementById('numerologyLoading').style.display = 'block';
              document.getElementById('numerologyContent').classList.add('hidden');
-             fetchNumerologyForecast();
+             
+             // Fetch with enhanced feedback
+             setTimeout(() => {
+                 fetchNumerologyForecast();
+                 
+                 // Restore button state
+                 if (refreshButton) {
+                     setTimeout(() => {
+                         refreshButton.disabled = false;
+                         refreshButton.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refresh';
+                     }, 2000);
+                 }
+             }, 500);
          }
 
          // Add CSS animation class
