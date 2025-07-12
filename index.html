@@ -329,6 +329,23 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Hide scrollbar for notifications list while maintaining scroll functionality */
+        #notificationList {
+            /* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+            -webkit-scrollbar {
+                display: none;
+            }
+            /* Hide scrollbar for Firefox */
+            scrollbar-width: none;
+            /* Hide scrollbar for IE and older Edge */
+            -ms-overflow-style: none;
+        }
+
+        /* Ensure the scrollbar stays hidden even on hover/focus */
+        #notificationList::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 <body>
