@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - The Rocket Trading Group</title>
+    <link href="https://cdn.jsdelivr.net/npm/preline@2.0.0/dist/preline.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Dark Theme Variables */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-quaternary: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+            --accent-blue: #58a6ff;
+            --accent-green: #56d364;
+            --accent-red: #f85149;
+            --accent-yellow: #e3b341;
+            --accent-muted: #6e7681;
+            --hover-bg: #21262d;
+        }
+
+        body {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .admin-card {
+            transition: all 0.3s ease;
+            background-color: var(--bg-secondary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        .admin-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4) !important;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--accent-muted) 0%, var(--bg-quaternary) 100%) !important;
+        }
+        .status-active {
+            background-color: var(--accent-green) !important;
+        }
+        .status-inactive {
+            background-color: var(--accent-yellow) !important;
+        }
+        .status-banned {
+            background-color: var(--accent-red) !important;
+        }
+        .modal {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.8) !important;
+        }
+        .modal-content {
+            backdrop-filter: blur(20px);
+            background: var(--bg-tertiary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+            background-color: var(--bg-secondary) !important;
+            border-right: 1px solid var(--border-color) !important;
+        }
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+        
+        /* Mobile sidebar initially hidden */
+        @media (max-width: 1023px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar:not(.sidebar-hidden) {
+                transform: translateX(0);
+            }
+        }
+        
+        /* Ensure sidebar stays visible on desktop */
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                display: block !important;
+                visibility: visible !important;
+            }
+            .sidebar-hidden {
+                transform: translateX(0) !important;
+            }
+        }
+        
+        /* Proper main content spacing */
+        .main-content {
+            margin-left: 0;
+            background-color: var(--bg-primary) !important;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-content {
+                margin-left: 16rem; /* 256px = w-64 */
+            }
+        }
+
+        /* Dark theme overrides */
+        .bg-white {
+            background-color: var(--bg-secondary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-primary) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--hover-bg) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-primary) !important;
+        }
+
+        .text-gray-700 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-muted) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-muted) !important;
+        }
+
+        .text-gray-400 {
+            color: var(--accent-muted) !important;
+        }
+
+        .border-gray-200, .border-gray-300, .border-b {
+            border-color: var(--border-color) !important;
+        }
+
+        .nav-link {
+            color: var(--text-secondary) !important;
+        }
+
+        .nav-link:hover {
+            background-color: var(--hover-bg) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .nav-link.active {
+            background-color: var(--accent-muted) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .bg-indigo-50 {
+            background-color: rgba(88, 166, 255, 0.1) !important;
+        }
+
+        .text-indigo-600 {
+            color: var(--accent-blue) !important;
+        }
+
+        .shadow-sm {
+            background-color: var(--bg-secondary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+
+        .shadow, .shadow-lg {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Input fields */
+        input, select, textarea {
+            background-color: var(--bg-tertiary) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-blue) !important;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1) !important;
+        }
+
+        /* Buttons */
+        .bg-indigo-600 {
+            background-color: var(--accent-blue) !important;
+        }
+
+        .bg-indigo-700 {
+            background-color: #4d8df0 !important;
+        }
+
+        .hover\:bg-indigo-700:hover {
+            background-color: #4d8df0 !important;
+        }
+
+        .bg-red-600 {
+            background-color: var(--accent-red) !important;
+        }
+
+        .hover\:bg-red-700:hover {
+            background-color: #e5484d !important;
+        }
+
+        .bg-green-600 {
+            background-color: var(--accent-green) !important;
+        }
+
+        .hover\:bg-green-700:hover {
+            background-color: #46c957 !important;
+        }
+
+        /* Tables */
+        .bg-gray-50 thead {
+            background-color: var(--bg-tertiary) !important;
+        }
+
+        /* Status badges */
+        .bg-green-100 {
+            background-color: rgba(86, 211, 100, 0.15) !important;
+        }
+
+        .text-green-800 {
+            color: var(--accent-green) !important;
+        }
+
+        .bg-yellow-100 {
+            background-color: rgba(227, 179, 65, 0.15) !important;
+        }
+
+        .text-yellow-800 {
+            color: var(--accent-yellow) !important;
+        }
+
+        .bg-red-100 {
+            background-color: rgba(248, 81, 73, 0.15) !important;
+        }
+
+        .text-red-800 {
+            color: var(--accent-red) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Fixed Sidebar -->
+    <div id="adminSidebar" class="sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
+        <div class="flex h-full flex-col">
+            <!-- Logo -->
+            <div class="flex h-16 items-center justify-between px-6 border-b">
+                <h1 class="text-xl font-bold text-gray-900">Admin Panel</h1>
+                <button id="sidebarToggle" class="lg:hidden text-gray-500 hover:text-gray-700">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Main Navigation -->
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="#" class="nav-link active flex items-center px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg" data-page="dashboard" onclick="navigateToAdminPage('dashboard'); return false;">
+                    <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v4H8V5z"></path>
+                    </svg>
+                    Dashboard
+                </a>
+                
+                <a href="#" class="nav-link flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg" data-page="analytics" onclick="navigateToAdminPage('analytics'); return false;">
+                    <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Analytics
+                </a>
+                
+                <a href="#" class="nav-link flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg" data-page="logs" onclick="navigateToAdminPage('logs'); return false;">
+                    <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Activity Logs
+                </a>
+                
+                <a href="#" class="nav-link flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg" data-page="security" onclick="navigateToAdminPage('security'); return false;">
+                    <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                    Security
+                </a>
+            </nav>
+            
+            <!-- System Management Category -->
+            <div class="px-4 py-6 border-t">
+                <div class="mb-4">
+                    <h3 class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">System Management</h3>
+                </div>
+                
+                <div class="space-y-2">
+                    <a href="#" class="nav-link flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg" data-page="users" onclick="navigateToAdminPage('users'); return false;">
+                        <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                        User Management
+                    </a>
+                    
+                    <a href="#" class="nav-link flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg" data-page="settings" onclick="navigateToAdminPage('settings'); return false;">
+                        <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        System Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <!-- Mobile menu button -->
+                    <button id="mobileMenuToggle" class="lg:hidden text-gray-500 hover:text-gray-700">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- Page Title -->
+                    <div class="flex-1">
+                        <h1 id="pageTitle" class="text-xl font-bold text-gray-900">Dashboard</h1>
+                    </div>
+                    
+                    <!-- Admin Profile -->
+                    <div class="flex items-center space-x-4">
+                        <a href="index.html" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                            Back to Dashboard
+                        </a>
+                        <div class="flex items-center space-x-2">
+                            <div class="h-8 w-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-medium" id="adminInitials">A</span>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700" id="adminName">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <main class="p-6">
+            <div id="pageContent">
+                <!-- Dashboard Content -->
+                <div id="dashboardContent" class="page-content">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">Admin Dashboard Overview</h2>
+                        <p class="text-gray-600">Monitor system performance and user activity.</p>
+                    </div>
+                    
+                    <!-- Admin Dashboard Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="admin-card bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                                    <p class="text-2xl font-bold text-gray-900" id="totalUsers">1,234</p>
+                                </div>
+                                <div class="h-12 w-12 gradient-bg rounded-lg flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-green-600">+12%</span>
+                                    <span class="text-sm text-gray-600 ml-2">from last month</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-card bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">Active Sessions</p>
+                                    <p class="text-2xl font-bold text-gray-900" id="activeSessions">89</p>
+                                </div>
+                                <div class="h-12 w-12 gradient-bg rounded-lg flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-green-600">+5%</span>
+                                    <span class="text-sm text-gray-600 ml-2">from yesterday</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-card bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">System Uptime</p>
+                                    <p class="text-2xl font-bold text-gray-900">99.9%</p>
+                                </div>
+                                <div class="h-12 w-12 gradient-bg rounded-lg flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-green-600">Excellent</span>
+                                    <span class="text-sm text-gray-600 ml-2">performance</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-card bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">Storage Used</p>
+                                    <p class="text-2xl font-bold text-gray-900">2.4GB</p>
+                                </div>
+                                <div class="h-12 w-12 gradient-bg rounded-lg flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-yellow-600">24%</span>
+                                    <span class="text-sm text-gray-600 ml-2">of total capacity</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity Overview -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent User Activity</h3>
+                            <div class="space-y-4" id="recentActivity">
+                                <!-- Recent activity will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-700">Database</span>
+                                    <span class="text-sm text-green-600 font-medium">Online</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-700">Cache Server</span>
+                                    <span class="text-sm text-green-600 font-medium">Online</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-700">Email Service</span>
+                                    <span class="text-sm text-green-600 font-medium">Online</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-700">Backup System</span>
+                                    <span class="text-sm text-yellow-600 font-medium">Running</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analytics Content -->
+                <div id="analyticsContent" class="page-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">System Analytics</h2>
+                        <p class="text-gray-600">Monitor performance metrics and user engagement.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Page Views</h3>
+                            <div class="text-3xl font-bold text-indigo-600">45,231</div>
+                            <p class="text-sm text-gray-600 mt-2">+18% from last month</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">API Calls</h3>
+                            <div class="text-3xl font-bold text-green-600">12,456</div>
+                            <p class="text-sm text-gray-600 mt-2">+22% from last month</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Error Rate</h3>
+                            <div class="text-3xl font-bold text-red-600">0.2%</div>
+                            <p class="text-sm text-gray-600 mt-2">-0.1% from last month</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Management Content -->
+                <div id="usersContent" class="page-content hidden">
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-900">User Management</h2>
+                                <p class="text-gray-600">Manage user accounts and permissions.</p>
+                            </div>
+                            <button id="addUserBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                                Add New User
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- User Search -->
+                    <div class="mb-6">
+                        <div class="relative">
+                            <input type="text" id="userSearch" placeholder="Search users..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                                    <!-- Users will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Settings Content -->
+                <div id="settingsContent" class="page-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">System Settings</h2>
+                        <p class="text-gray-600">Configure system preferences and security settings.</p>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <!-- General Settings -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-md font-medium text-gray-900 mb-4">General Settings</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
+                                    <input type="text" id="siteName" value="The Rocket Trading Group" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Admin Email</label>
+                                    <input type="email" id="adminEmail" value="admin@example.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-md font-medium text-gray-900 mb-4">Security Settings</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700">Two-Factor Authentication</label>
+                                        <p class="text-sm text-gray-500">Require 2FA for all admin accounts</p>
+                                    </div>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600" checked>
+                                        <span class="ml-2 text-sm text-gray-700">Enabled</span>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700">Session Timeout</label>
+                                        <p class="text-sm text-gray-500">Auto-logout after inactivity</p>
+                                    </div>
+                                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        <option value="30">30 minutes</option>
+                                        <option value="60" selected>1 hour</option>
+                                        <option value="120">2 hours</option>
+                                        <option value="240">4 hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Settings Button -->
+                        <div class="flex justify-end">
+                            <button id="saveSettingsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Logs Content -->
+                <div id="logsContent" class="page-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">Activity Logs</h2>
+                        <p class="text-gray-600">Monitor system activity and user actions.</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="space-y-4" id="activityLogs">
+                            <!-- Activity logs will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Content -->
+                <div id="securityContent" class="page-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">Security Dashboard</h2>
+                        <p class="text-gray-600">Monitor security status and threats.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
+                            <h3 class="text-md font-medium text-green-800 mb-2">Security Status</h3>
+                            <p class="text-sm text-green-700">All security measures are active</p>
+                        </div>
+                        <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                            <h3 class="text-md font-medium text-yellow-800 mb-2">Login Attempts</h3>
+                            <p class="text-sm text-yellow-700">3 failed attempts in the last hour</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Security Metrics</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">99.8%</div>
+                                <div class="text-sm text-gray-600">Uptime</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">15</div>
+                                <div class="text-sm text-gray-600">Active Sessions</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-red-600">0</div>
+                                <div class="text-sm text-gray-600">Security Threats</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal fixed inset-0 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content w-full max-w-md p-6 rounded-lg shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Add New User</h3>
+                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="addUserForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="newUserEmail" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="newUserPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select id="newUserRole" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" id="cancelAddUser" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700">
+                            Add User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Admin Panel Manager
+        class AdminPanelManager {
+            constructor() {
+                this.currentUser = null;
+                this.currentPage = 'dashboard';
+                this.users = [
+                    { id: 1, email: 'admin@example.com', role: 'admin', status: 'active', lastLogin: '2024-01-15 10:30:00' },
+                    { id: 2, email: 'user@example.com', role: 'user', status: 'active', lastLogin: '2024-01-15 09:45:00' },
+                    { id: 3, email: 'manager@example.com', role: 'user', status: 'active', lastLogin: '2024-01-14 16:20:00' },
+                    { id: 4, email: 'test@example.com', role: 'user', status: 'inactive', lastLogin: '2024-01-10 14:15:00' }
+                ];
+                this.activityLogs = [
+                    { timestamp: '2024-01-15 10:45:00', action: 'User login', user: 'admin@example.com', ip: '192.168.1.100' },
+                    { timestamp: '2024-01-15 10:30:00', action: 'Settings updated', user: 'admin@example.com', ip: '192.168.1.100' },
+                    { timestamp: '2024-01-15 09:45:00', action: 'User login', user: 'user@example.com', ip: '192.168.1.101' },
+                    { timestamp: '2024-01-15 09:30:00', action: 'Failed login attempt', user: 'unknown', ip: '192.168.1.102' }
+                ];
+                this.initializeAdmin();
+            }
+
+            initializeAdmin() {
+                this.checkAdminAuthentication();
+                this.loadAdminData();
+                this.initializeEventListeners();
+                this.setupSidebar();
+                this.showPage('dashboard');
+                this.loadUsers();
+                this.loadActivityLogs();
+                this.loadRecentActivity();
+            }
+
+            checkAdminAuthentication() {
+                const sessionData = localStorage.getItem('userSession') || sessionStorage.getItem('userSession');
+                
+                if (!sessionData) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                try {
+                    const session = JSON.parse(sessionData);
+                    this.currentUser = session.user;
+                    
+                    if (this.currentUser.role !== 'admin') {
+                        alert('Access denied. Admin privileges required.');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error parsing session data:', error);
+                    window.location.href = 'login.html';
+                }
+            }
+
+            loadAdminData() {
+                if (!this.currentUser) return;
+
+                const userInitials = this.currentUser.email.substring(0, 2).toUpperCase();
+                const userName = this.currentUser.email.split('@')[0];
+
+                document.getElementById('adminInitials').textContent = userInitials;
+                document.getElementById('adminName').textContent = userName;
+            }
+
+            initializeEventListeners() {
+                // Mobile menu toggle
+                document.getElementById('mobileMenuToggle').addEventListener('click', () => {
+                    this.toggleMobileSidebar();
+                });
+
+                // Sidebar toggle (mobile)
+                document.getElementById('sidebarToggle').addEventListener('click', () => {
+                    this.toggleMobileSidebar();
+                });
+
+                // Mobile overlay
+                document.getElementById('mobileOverlay').addEventListener('click', () => {
+                    this.hideMobileSidebar();
+                });
+
+                // Add user modal
+                document.getElementById('addUserBtn').addEventListener('click', () => {
+                    this.showAddUserModal();
+                });
+
+                document.getElementById('closeModalBtn').addEventListener('click', () => {
+                    this.hideAddUserModal();
+                });
+
+                document.getElementById('cancelAddUser').addEventListener('click', () => {
+                    this.hideAddUserModal();
+                });
+
+                // Add user form
+                document.getElementById('addUserForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addUser();
+                });
+
+                // User search
+                document.getElementById('userSearch').addEventListener('input', (e) => {
+                    this.searchUsers(e.target.value);
+                });
+
+                // Save settings
+                document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+                    this.saveSettings();
+                });
+
+                // Close modal when clicking outside
+                document.getElementById('addUserModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('addUserModal')) {
+                        this.hideAddUserModal();
+                    }
+                });
+
+                // Window resize handler
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth >= 1024) {
+                        this.hideMobileSidebar();
+                    }
+                });
+            }
+
+            setupSidebar() {
+                // Initialize sidebar navigation
+                const navLinks = document.querySelectorAll('.nav-link');
+                
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const page = link.getAttribute('data-page');
+                        this.showPage(page);
+                    });
+                });
+            }
+
+            showPage(pageName) {
+                // Hide all page contents
+                document.querySelectorAll('.page-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Show selected page content
+                const selectedPage = document.getElementById(pageName + 'Content');
+                if (selectedPage) {
+                    selectedPage.classList.remove('hidden');
+                }
+                
+                // Update active nav link
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active', 'text-indigo-600', 'bg-indigo-50');
+                    link.classList.add('text-gray-700');
+                });
+                
+                const activeLink = document.querySelector(`[data-page="${pageName}"]`);
+                if (activeLink) {
+                    activeLink.classList.add('active', 'text-indigo-600', 'bg-indigo-50');
+                    activeLink.classList.remove('text-gray-700');
+                }
+                
+                // Update page title
+                const pageTitle = document.getElementById('pageTitle');
+                if (pageTitle) {
+                    const pageTitles = {
+                        dashboard: 'Dashboard',
+                        analytics: 'Analytics',
+                        users: 'User Management',
+                        settings: 'System Settings',
+                        logs: 'Activity Logs',
+                        security: 'Security'
+                    };
+                    pageTitle.textContent = pageTitles[pageName] || 'Admin Panel';
+                }
+                
+                this.currentPage = pageName;
+                
+                // Hide mobile sidebar when navigating
+                this.hideMobileSidebar();
+            }
+
+            toggleMobileSidebar() {
+                const sidebar = document.getElementById('adminSidebar');
+                const overlay = document.getElementById('mobileOverlay');
+                
+                if (sidebar.classList.contains('sidebar-hidden')) {
+                    sidebar.classList.remove('sidebar-hidden');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('sidebar-hidden');
+                    overlay.classList.add('hidden');
+                }
+            }
+
+            hideMobileSidebar() {
+                const sidebar = document.getElementById('adminSidebar');
+                const overlay = document.getElementById('mobileOverlay');
+                
+                sidebar.classList.add('sidebar-hidden');
+                overlay.classList.add('hidden');
+            }
+
+            loadUsers() {
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = this.users.map(user => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                    <span class="text-indigo-600 font-medium">${user.email.substring(0, 2).toUpperCase()}</span>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">${user.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}">
+                                ${user.role}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${user.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${user.lastLogin}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-indigo-600 hover:text-indigo-900 mr-4" onclick="adminPanel.editUser(${user.id})">Edit</button>
+                            <button class="text-red-600 hover:text-red-900" onclick="adminPanel.deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            loadActivityLogs() {
+                const logsContainer = document.getElementById('activityLogs');
+                logsContainer.innerHTML = this.activityLogs.map(log => `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                <svg class="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${log.action}</div>
+                                <div class="text-xs text-gray-500">User: ${log.user} | IP: ${log.ip}</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${log.timestamp}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            showAddUserModal() {
+                document.getElementById('addUserModal').classList.remove('hidden');
+            }
+
+            hideAddUserModal() {
+                document.getElementById('addUserModal').classList.add('hidden');
+                document.getElementById('addUserForm').reset();
+            }
+
+            addUser() {
+                const email = document.getElementById('newUserEmail').value;
+                const password = document.getElementById('newUserPassword').value;
+                const role = document.getElementById('newUserRole').value;
+
+                if (!email || !password) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+
+                // Check if user already exists
+                if (this.users.some(user => user.email === email)) {
+                    alert('User with this email already exists');
+                    return;
+                }
+
+                const newUser = {
+                    id: this.users.length + 1,
+                    email: email,
+                    role: role,
+                    status: 'active',
+                    lastLogin: 'Never'
+                };
+
+                this.users.push(newUser);
+                this.loadUsers();
+                this.hideAddUserModal();
+                
+                // Update total users count
+                document.getElementById('totalUsers').textContent = this.users.length;
+                
+                alert('User added successfully');
+            }
+
+            editUser(userId) {
+                const user = this.users.find(u => u.id === userId);
+                if (user) {
+                    const newRole = user.role === 'admin' ? 'user' : 'admin';
+                    user.role = newRole;
+                    this.loadUsers();
+                    alert(`User role updated to ${newRole}`);
+                }
+            }
+
+            deleteUser(userId) {
+                if (confirm('Are you sure you want to delete this user?')) {
+                    this.users = this.users.filter(u => u.id !== userId);
+                    this.loadUsers();
+                    document.getElementById('totalUsers').textContent = this.users.length;
+                    alert('User deleted successfully');
+                }
+            }
+
+            searchUsers(query) {
+                if (!query) {
+                    this.loadUsers();
+                    return;
+                }
+
+                const filteredUsers = this.users.filter(user => 
+                    user.email.toLowerCase().includes(query.toLowerCase()) ||
+                    user.role.toLowerCase().includes(query.toLowerCase())
+                );
+
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = filteredUsers.map(user => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                    <span class="text-indigo-600 font-medium">${user.email.substring(0, 2).toUpperCase()}</span>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">${user.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}">
+                                ${user.role}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${user.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${user.lastLogin}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-indigo-600 hover:text-indigo-900 mr-4" onclick="adminPanel.editUser(${user.id})">Edit</button>
+                            <button class="text-red-600 hover:text-red-900" onclick="adminPanel.deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            loadRecentActivity() {
+                const recentActivity = document.getElementById('recentActivity');
+                if (!recentActivity) return;
+                
+                const recentLogs = this.activityLogs.slice(0, 5);
+                recentActivity.innerHTML = recentLogs.map(log => `
+                    <div class="flex items-center space-x-3">
+                        <div class="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <svg class="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-900">${log.action}</div>
+                            <div class="text-xs text-gray-500">${log.user} • ${log.timestamp}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            saveSettings() {
+                const siteName = document.getElementById('siteName').value;
+                const adminEmail = document.getElementById('adminEmail').value;
+                
+                // Simulate saving settings
+                alert('Settings saved successfully');
+                
+                // Add to activity log
+                this.activityLogs.unshift({
+                    timestamp: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                    action: 'Settings updated',
+                    user: this.currentUser.email,
+                    ip: '192.168.1.100'
+                });
+                
+                this.loadActivityLogs();
+                this.loadRecentActivity();
+            }
+        }
+
+        // Global navigation function
+        function navigateToAdminPage(pageName) {
+            if (window.adminPanel) {
+                window.adminPanel.showPage(pageName);
+            }
+        }
+
+        // Initialize admin panel
+        let adminPanel;
+        document.addEventListener('DOMContentLoaded', () => {
+            adminPanel = new AdminPanelManager();
+            window.adminPanel = adminPanel; // Make globally accessible
+        });
+    </script>
+</body>
+</html> 
