@@ -1,0 +1,37 @@
+{
+  "name": "preline-webapp",
+  "version": "1.0.0",
+  "description": "A modern web application with sidebar, search, and profile widgets using Preline theme",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server --port=3000",
+    "build": "tsc && webpack --mode=production",
+    "dev": "live-server --port=3000 --open",
+    "build:tsx": "tsc --jsx preserve --target es2015 *.tsx",
+    "watch:tsx": "tsc --jsx preserve --target es2015 *.tsx --watch"
+  },
+  "dependencies": {
+    "preline": "^2.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@heroicons/react": "^2.0.18",
+    "chart.js": "^4.4.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "ts-loader": "^9.4.0",
+    "babel-loader": "^9.1.0",
+    "@babel/core": "^7.22.0",
+    "@babel/preset-react": "^7.22.0",
+    "@babel/preset-typescript": "^7.22.0"
+  },
+  "keywords": ["webapp", "preline", "dashboard", "admin", "signals", "trading", "react", "typescript"],
+  "author": "Developer",
+  "license": "MIT"
+} 
