@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Generator - Financial Instruments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Dark Theme Variables */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+            --accent-blue: #58a6ff;
+            --accent-green: #56d364;
+            --accent-red: #f85149;
+            --accent-purple: #a5a5ff;
+            --hover-bg: #21262d;
+        }
+
+        body {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .signal-card {
+            transition: all 0.3s ease;
+            background-color: var(--bg-secondary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        .signal-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+        }
+        .bullish-signal {
+            border-left: 4px solid var(--accent-green) !important;
+        }
+        .bearish-signal {
+            border-left: 4px solid var(--accent-red) !important;
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Dark theme overrides */
+        .bg-white {
+            background-color: var(--bg-secondary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-primary) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-primary) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-muted) !important;
+        }
+
+        .border-gray-200, .border-gray-300 {
+            border-color: var(--border-color) !important;
+        }
+
+        .divide-gray-200 > * + * {
+            border-color: var(--border-color) !important;
+        }
+
+        .shadow-lg, .shadow-md {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Input fields */
+        input {
+            background-color: var(--bg-tertiary) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        input:focus {
+            border-color: var(--accent-blue) !important;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1) !important;
+        }
+
+        input::placeholder {
+            color: var(--text-muted) !important;
+        }
+
+        /* Buttons */
+        .bg-blue-600 {
+            background-color: var(--accent-blue) !important;
+        }
+
+        .hover\:bg-blue-700:hover {
+            background-color: #4d8df0 !important;
+        }
+
+        /* Color overrides for text */
+        .text-blue-600 {
+            color: var(--accent-blue) !important;
+        }
+
+        .text-green-600 {
+            color: var(--accent-green) !important;
+        }
+
+        .text-red-600 {
+            color: var(--accent-red) !important;
+        }
+
+        .text-purple-600 {
+            color: var(--accent-purple) !important;
+        }
+
+        /* Table styling */
+        .bg-gray-50 thead {
+            background-color: var(--bg-tertiary) !important;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--bg-secondary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+
+        .hover\:text-gray-900:hover {
+            color: var(--text-primary) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold text-gray-900">Signal Generator</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="window.location.href='index.html'" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Financial Instrument Signal Generator</h2>
+                    <p class="text-gray-600">Generate trading signals using advanced algorithms including ICT methodology, Fibonacci analysis, and Tesla Vortex patterns</p>
+                </div>
+                <div class="mt-4 lg:mt-0 lg:ml-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center">
+                            <input 
+                                type="text" 
+                                id="symbolInput" 
+                                placeholder="Enter symbol (e.g., AAPL, EURUSD)"
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                        </div>
+                        <button 
+                            onclick="generateSignals()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            <i class="fas fa-chart-line mr-2"></i>Generate Signal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Signals Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+            <!-- Live Signals -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-broadcast-tower text-blue-600 mr-2"></i>Live Signals
+                </h3>
+                <div id="liveSignals" class="space-y-3">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-chart-line text-3xl mb-2"></i>
+                        <p>Enter a symbol to generate signals</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signal Statistics -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-chart-pie text-green-600 mr-2"></i>Signal Statistics
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Total Signals:</span>
+                        <span id="totalSignals" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Bullish:</span>
+                        <span id="bullishSignals" class="font-semibold text-green-600">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Bearish:</span>
+                        <span id="bearishSignals" class="font-semibold text-red-600">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Avg Confidence:</span>
+                        <span id="avgConfidence" class="font-semibold">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Status -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-globe text-purple-600 mr-2"></i>Market Status
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Current Symbol:</span>
+                        <span id="currentSymbol" class="font-semibold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Last Update:</span>
+                        <span id="lastUpdate" class="font-semibold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Market Session:</span>
+                        <span id="marketSession" class="font-semibold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Volatility:</span>
+                        <span id="volatility" class="font-semibold">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Signals Table -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-table text-blue-600 mr-2"></i>Detailed Signal Analysis
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direction</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stop Loss</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Take Profit</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">R:R Ratio</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Setup</th>
+                        </tr>
+                    </thead>
+                    <tbody id="signalsTableBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                <i class="fas fa-search text-2xl mb-2"></i>
+                                <p>Generate signals to view detailed analysis</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Additional Features Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <!-- Fibonacci Analysis -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line text-blue-600 mr-2"></i>Fibonacci Analysis
+                </h3>
+                <div id="fibonacciLevels" class="space-y-2">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-calculator text-3xl mb-2"></i>
+                        <p>Generate signals to view Fibonacci levels</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ICT Wireframe -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-project-diagram text-purple-600 mr-2"></i>ICT Wireframe
+                </h3>
+                <div id="ictWireframe" class="space-y-3">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-sitemap text-3xl mb-2"></i>
+                        <p>Generate signals to view ICT wireframe</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-8 max-w-sm mx-4">
+            <div class="text-center">
+                <i class="fas fa-spinner loading-spinner text-3xl text-blue-600 mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Generating Signals</h3>
+                <p class="text-gray-600">Analyzing market data and calculating trading signals...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('Signal Generator script loaded');
+
+        // Global variables
+        let currentSignals = [];
+
+        // Main function to generate signals
+        async function generateSignals() {
+            console.log('Generate signals function called');
+            
+            const symbolInput = document.getElementById('symbolInput');
+            if (!symbolInput) {
+                console.error('Symbol input not found');
+                return;
+            }
+            
+            const symbol = symbolInput.value.trim().toUpperCase();
+            
+            if (!symbol) {
+                showNotification('Please enter a symbol', 'error');
+                return;
+            }
+
+            // Show loading
+            showLoading(true);
+
+            try {
+                console.log('Generating signals for:', symbol);
+                
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Generate mock signals
+                const signals = generateMockSignals(symbol);
+                currentSignals = signals;
+
+                console.log('Generated signals:', signals);
+
+                // Update UI
+                updateSignalsDisplay(signals);
+                updateStatistics(signals);
+                updateMarketStatus(symbol);
+                updateFibonacciAnalysis(signals);
+                updateICTWireframe(signals);
+
+                showNotification('Generated ' + signals.length + ' signals for ' + symbol, 'success');
+
+            } catch (error) {
+                console.error('Error generating signals:', error);
+                showNotification('Error generating signals. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Generate mock signals
+        function generateMockSignals(symbol) {
+            console.log('Generating mock signals for:', symbol);
+            
+            const signals = [];
+            const currentPrice = 100 + Math.random() * 400;
+            const setupTypes = ['Bullish OB', 'Bearish OB', 'FVG', 'Liquidity Sweep', 'MSS', 'ICT Breaker', 'PO3 Range'];
+            
+            // Generate 3-6 signals
+            const numSignals = Math.floor(Math.random() * 4) + 3;
+            
+            for (let i = 0; i < numSignals; i++) {
+                const direction = Math.random() > 0.5 ? 'bullish' : 'bearish';
+                const entryPrice = currentPrice + (Math.random() - 0.5) * 20;
+                const stopLoss = direction === 'bullish' ? 
+                    entryPrice - (Math.random() * 10 + 5) : 
+                    entryPrice + (Math.random() * 10 + 5);
+                const takeProfit = direction === 'bullish' ? 
+                    entryPrice + (Math.random() * 20 + 10) : 
+                    entryPrice - (Math.random() * 20 + 10);
+                
+                const rrRatio = Math.abs(takeProfit - entryPrice) / Math.abs(entryPrice - stopLoss);
+                
+                signals.push({
+                    id: 'signal_' + (i + 1),
+                    symbol: symbol,
+                    direction: direction,
+                    entry_price: entryPrice,
+                    stop_loss: stopLoss,
+                    take_profit: takeProfit,
+                    risk_reward_ratio: rrRatio,
+                    confidence: Math.floor(Math.random() * 30) + 70,
+                    setup_type: setupTypes[Math.floor(Math.random() * setupTypes.length)],
+                    dominant_signal: direction === 'bullish' ? 'BUY' : 'SELL',
+                    current_price: currentPrice
+                });
+            }
+            
+            return signals;
+        }
+
+        // Update signals display
+        function updateSignalsDisplay(signals) {
+            console.log('Updating signals display');
+            
+            try {
+                // Update live signals
+                const liveSignalsContainer = document.getElementById('liveSignals');
+                if (!liveSignalsContainer) {
+                    console.error('Live signals container not found');
+                    return;
+                }
+                
+                liveSignalsContainer.innerHTML = '';
+                
+                signals.slice(0, 3).forEach(signal => {
+                    const signalCard = createSignalCard(signal);
+                    liveSignalsContainer.appendChild(signalCard);
+                });
+
+                // Update table
+                const tableBody = document.getElementById('signalsTableBody');
+                if (!tableBody) {
+                    console.error('Table body not found');
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                signals.forEach(signal => {
+                    const row = createSignalRow(signal);
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error updating signals display:', error);
+            }
+        }
+
+        // Create signal card
+        function createSignalCard(signal) {
+            const card = document.createElement('div');
+            card.className = 'signal-card p-4 rounded-lg border ' + signal.direction + '-signal';
+            
+            const directionIcon = signal.direction === 'bullish' ? 'fa-arrow-up text-green-600' : 'fa-arrow-down text-red-600';
+            const directionColor = signal.direction === 'bullish' ? 'text-green-600' : 'text-red-600';
+            
+            card.innerHTML = '<div class="flex items-center justify-between mb-2">' +
+                '<div class="flex items-center">' +
+                '<i class="fas ' + directionIcon + ' mr-2"></i>' +
+                '<span class="font-semibold ' + directionColor + '">' + signal.dominant_signal + '</span>' +
+                '</div>' +
+                '<span class="text-sm text-gray-500">' + signal.confidence + '%</span>' +
+                '</div>' +
+                '<div class="text-sm text-gray-600 mb-2">' + signal.setup_type + '</div>' +
+                '<div class="flex justify-between text-sm">' +
+                '<span>Entry: $' + signal.entry_price.toFixed(2) + '</span>' +
+                '<span>R:R ' + signal.risk_reward_ratio.toFixed(2) + '</span>' +
+                '</div>';
+            
+            return card;
+        }
+
+        // Create signal row
+        function createSignalRow(signal) {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            
+            const directionIcon = signal.direction === 'bullish' ? 'fa-arrow-up text-green-600' : 'fa-arrow-down text-red-600';
+            const directionColor = signal.direction === 'bullish' ? 'text-green-600' : 'text-red-600';
+            
+            row.innerHTML = '<td class="px-6 py-4 whitespace-nowrap">' +
+                '<div class="flex items-center">' +
+                '<i class="fas ' + directionIcon + ' mr-2"></i>' +
+                '<span class="font-medium">' + signal.symbol + '</span>' +
+                '</div>' +
+                '</td>' +
+                '<td class="px-6 py-4 whitespace-nowrap">' +
+                '<span class="px-2 py-1 text-xs font-semibold rounded-full ' + directionColor + ' bg-opacity-10">' +
+                signal.dominant_signal +
+                '</span>' +
+                '</td>' +
+                '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$' + signal.entry_price.toFixed(2) + '</td>' +
+                '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$' + signal.stop_loss.toFixed(2) + '</td>' +
+                '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$' + signal.take_profit.toFixed(2) + '</td>' +
+                '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' + signal.risk_reward_ratio.toFixed(2) + '</td>' +
+                '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' + signal.confidence + '%</td>' +
+                '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' + signal.setup_type + '</td>';
+            
+            return row;
+        }
+
+        // Update statistics
+        function updateStatistics(signals) {
+            try {
+                const bullishCount = signals.filter(s => s.direction === 'bullish').length;
+                const bearishCount = signals.filter(s => s.direction === 'bearish').length;
+                const avgConfidence = signals.reduce((sum, s) => sum + s.confidence, 0) / signals.length;
+                
+                const totalSignalsEl = document.getElementById('totalSignals');
+                const bullishSignalsEl = document.getElementById('bullishSignals');
+                const bearishSignalsEl = document.getElementById('bearishSignals');
+                const avgConfidenceEl = document.getElementById('avgConfidence');
+                
+                if (totalSignalsEl) totalSignalsEl.textContent = signals.length;
+                if (bullishSignalsEl) bullishSignalsEl.textContent = bullishCount;
+                if (bearishSignalsEl) bearishSignalsEl.textContent = bearishCount;
+                if (avgConfidenceEl) avgConfidenceEl.textContent = avgConfidence.toFixed(1) + '%';
+            } catch (error) {
+                console.error('Error updating statistics:', error);
+            }
+        }
+
+        // Update market status
+        function updateMarketStatus(symbol) {
+            try {
+                const now = new Date();
+                const sessions = ['London', 'New York', 'Asian', 'Pre-Market'];
+                const volatilities = ['Low', 'Medium', 'High'];
+                
+                const currentSymbolEl = document.getElementById('currentSymbol');
+                const lastUpdateEl = document.getElementById('lastUpdate');
+                const marketSessionEl = document.getElementById('marketSession');
+                const volatilityEl = document.getElementById('volatility');
+                
+                if (currentSymbolEl) currentSymbolEl.textContent = symbol;
+                if (lastUpdateEl) lastUpdateEl.textContent = now.toLocaleTimeString();
+                if (marketSessionEl) marketSessionEl.textContent = sessions[Math.floor(Math.random() * sessions.length)];
+                if (volatilityEl) volatilityEl.textContent = volatilities[Math.floor(Math.random() * volatilities.length)];
+            } catch (error) {
+                console.error('Error updating market status:', error);
+            }
+        }
+
+        // Update Fibonacci analysis
+        function updateFibonacciAnalysis(signals) {
+            try {
+                if (signals.length === 0) return;
+                
+                const signal = signals[0];
+                const fibContainer = document.getElementById('fibonacciLevels');
+                if (!fibContainer) return;
+                
+                const fibLevels = {
+                    '23.6%': signal.current_price * 0.236,
+                    '38.2%': signal.current_price * 0.382,
+                    '50%': signal.current_price * 0.5,
+                    '61.8%': signal.current_price * 0.618,
+                    '78.6%': signal.current_price * 0.786
+                };
+                
+                fibContainer.innerHTML = '';
+                Object.entries(fibLevels).forEach(([level, price]) => {
+                    const levelDiv = document.createElement('div');
+                    levelDiv.className = 'p-3 rounded-lg mb-2 bg-blue-50 border-l-4 border-blue-500';
+                    levelDiv.innerHTML = '<div class="flex justify-between">' +
+                        '<span class="font-medium">Fib ' + level + '</span>' +
+                        '<span class="text-blue-600 font-semibold">$' + price.toFixed(2) + '</span>' +
+                        '</div>';
+                    fibContainer.appendChild(levelDiv);
+                });
+            } catch (error) {
+                console.error('Error updating Fibonacci analysis:', error);
+            }
+        }
+
+        // Update ICT wireframe
+        function updateICTWireframe(signals) {
+            try {
+                if (signals.length === 0) return;
+                
+                const signal = signals[0];
+                const wireframeContainer = document.getElementById('ictWireframe');
+                if (!wireframeContainer) return;
+                
+                const wireframeStrength = Math.floor(Math.random() * 30) + 70;
+                const po3Low = signal.current_price - 15;
+                const po3High = signal.current_price + 15;
+                
+                wireframeContainer.innerHTML = '<div class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 rounded-lg mb-4">' +
+                    '<h4 class="font-semibold mb-2">Wireframe Strength</h4>' +
+                    '<div class="text-2xl font-bold">' + wireframeStrength + '%</div>' +
+                    '</div>' +
+                    '<div class="space-y-3">' +
+                    '<div class="flex justify-between">' +
+                    '<span class="text-gray-600">PO3 Low:</span>' +
+                    '<span class="font-semibold text-red-600">$' + po3Low.toFixed(2) + '</span>' +
+                    '</div>' +
+                    '<div class="flex justify-between">' +
+                    '<span class="text-gray-600">PO3 High:</span>' +
+                    '<span class="font-semibold text-green-600">$' + po3High.toFixed(2) + '</span>' +
+                    '</div>' +
+                    '<div class="flex justify-between">' +
+                    '<span class="text-gray-600">Active Algorithms:</span>' +
+                    '<span class="font-semibold">' + (Math.floor(Math.random() * 3) + 2) + '</span>' +
+                    '</div>' +
+                    '</div>';
+            } catch (error) {
+                console.error('Error updating ICT wireframe:', error);
+            }
+        }
+
+        // Show loading overlay
+        function showLoading(show) {
+            try {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    if (show) {
+                        overlay.classList.remove('hidden');
+                    } else {
+                        overlay.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error showing loading:', error);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            try {
+                type = type || 'info';
+                const notification = document.createElement('div');
+                
+                let bgColor = 'bg-blue-500 text-white';
+                let icon = 'fa-info';
+                
+                if (type === 'success') {
+                    bgColor = 'bg-green-500 text-white';
+                    icon = 'fa-check';
+                } else if (type === 'error') {
+                    bgColor = 'bg-red-500 text-white';
+                    icon = 'fa-times';
+                }
+                
+                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ' + bgColor;
+                notification.innerHTML = '<div class="flex items-center">' +
+                    '<i class="fas ' + icon + ' mr-2"></i>' +
+                    '<span>' + message + '</span>' +
+                    '</div>';
+                
+                document.body.appendChild(notification);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 3000);
+            } catch (error) {
+                console.error('Error showing notification:', error);
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded - setting up event listeners');
+            
+            try {
+                const symbolInput = document.getElementById('symbolInput');
+                if (symbolInput) {
+                    symbolInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            generateSignals();
+                        }
+                    });
+                    console.log('Enter key listener added to symbol input');
+                } else {
+                    console.error('Symbol input not found during initialization');
+                }
+            } catch (error) {
+                console.error('Error setting up event listeners:', error);
+            }
+            
+            console.log('Signal Generator ready!');
+        });
+
+        console.log('Signal Generator script fully loaded');
+    </script>
+</body>
+</html> 

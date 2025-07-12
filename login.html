@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - The Rocket Trading Group</title>
+    <link href="https://cdn.jsdelivr.net/npm/preline@2.0.0/dist/preline.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Dark Theme Variables */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+            --accent-blue: #58a6ff;
+            --accent-muted: #6e7681;
+        }
+
+        .login-container {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            min-height: 100vh;
+        }
+        .login-form {
+            backdrop-filter: blur(20px);
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid var(--border-color);
+        }
+        .input-field {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+        .input-field:focus {
+            background: var(--bg-secondary);
+            border-color: var(--accent-blue);
+        }
+        
+        /* Button dark theme */
+        .bg-indigo-600 {
+            background-color: var(--accent-blue) !important;
+        }
+        
+        .hover\:bg-indigo-700:hover {
+            background-color: #4d8df0 !important;
+        }
+        
+        /* Error message dark theme */
+        .bg-red-100 {
+            background-color: rgba(248, 81, 73, 0.15) !important;
+        }
+        
+        .text-red-700 {
+            color: #f85149 !important;
+        }
+        
+        .border-red-400 {
+            border-color: rgba(248, 81, 73, 0.3) !important;
+        }
+    </style>
+</head>
+<body class="login-container flex items-center justify-center">
+    <div class="login-form max-w-md w-full mx-4 p-8 rounded-2xl shadow-2xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+            <p class="text-white/80">Sign in to your account</p>
+        </div>
+        
+        <form id="loginForm" class="space-y-6">
+            <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                <span class="block sm:inline" id="errorText"></span>
+            </div>
+            
+            <div class="space-y-2">
+                <label for="email" class="block text-sm font-medium text-white">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    placeholder="Enter your email"
+                    required
+                >
+            </div>
+            
+            <div class="space-y-2">
+                <label for="password" class="block text-sm font-medium text-white">Password</label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        placeholder="Enter your password"
+                        required
+                    >
+                    <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-white/70 hover:text-white">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input 
+                        type="checkbox" 
+                        id="remember" 
+                        name="remember" 
+                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    >
+                    <label for="remember" class="ml-2 block text-sm text-white">Remember me</label>
+                </div>
+                <a href="#" class="text-sm text-white hover:text-indigo-200 transition-colors">Forgot password?</a>
+            </div>
+            
+            <button 
+                type="submit" 
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+                Sign In
+            </button>
+        </form>
+        
+        <div class="mt-8 text-center">
+            <p class="text-white/80">
+                Don't have an account? 
+                <a href="#" class="text-white hover:text-indigo-200 font-medium transition-colors">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Authentication system
+        class AuthenticationSystem {
+            constructor() {
+                this.users = [
+                    { email: 'admin@example.com', password: 'admin123', role: 'admin' },
+                    { email: 'user@example.com', password: 'user123', role: 'user' }
+                ];
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleLogin();
+                });
+
+                document.getElementById('togglePassword').addEventListener('click', () => {
+                    this.togglePasswordVisibility();
+                });
+            }
+
+            handleLogin() {
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const remember = document.getElementById('remember').checked;
+
+                if (!this.validateForm(email, password)) {
+                    return;
+                }
+
+                const user = this.authenticateUser(email, password);
+                
+                if (user) {
+                    this.loginSuccess(user, remember);
+                } else {
+                    this.showError('Invalid email or password. Please try again.');
+                }
+            }
+
+            validateForm(email, password) {
+                if (!email || !password) {
+                    this.showError('Please fill in all fields.');
+                    return false;
+                }
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    this.showError('Please enter a valid email address.');
+                    return false;
+                }
+
+                if (password.length < 6) {
+                    this.showError('Password must be at least 6 characters long.');
+                    return false;
+                }
+
+                return true;
+            }
+
+            authenticateUser(email, password) {
+                return this.users.find(user => 
+                    user.email === email && user.password === password
+                );
+            }
+
+            loginSuccess(user, remember) {
+                // Store user session
+                const sessionData = {
+                    user: {
+                        email: user.email,
+                        role: user.role
+                    },
+                    loginTime: new Date().toISOString(),
+                    remember: remember
+                };
+
+                if (remember) {
+                    localStorage.setItem('userSession', JSON.stringify(sessionData));
+                } else {
+                    sessionStorage.setItem('userSession', JSON.stringify(sessionData));
+                }
+
+                // Redirect to main app
+                window.location.href = 'index.html';
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                const errorText = document.getElementById('errorText');
+                
+                errorText.textContent = message;
+                errorDiv.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    errorDiv.classList.add('hidden');
+                }, 5000);
+            }
+
+            togglePasswordVisibility() {
+                const passwordInput = document.getElementById('password');
+                const toggleButton = document.getElementById('togglePassword');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    toggleButton.innerHTML = `
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                        </svg>
+                    `;
+                } else {
+                    passwordInput.type = 'password';
+                    toggleButton.innerHTML = `
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    `;
+                }
+            }
+        }
+
+        // Initialize authentication system
+        document.addEventListener('DOMContentLoaded', () => {
+            new AuthenticationSystem();
+        });
+    </script>
+</body>
+</html> 
