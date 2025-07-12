@@ -1,7 +1,16 @@
 steps:
-  # Build the container image using Dockerfile
+  # Build the container image using Docker (disable auto-detection)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-f', 'Dockerfile', '-t', 'gcr.io/$PROJECT_ID/rocket-trading-app:$COMMIT_SHA', '.']
+    args: 
+      - 'build'
+      - '-f'
+      - 'Dockerfile'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/rocket-trading-app:$COMMIT_SHA'
+      - '--no-cache'
+      - '.'
+    env:
+      - 'DOCKER_BUILDKIT=1'
     
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -42,10 +51,15 @@ steps:
 images:
   - gcr.io/$PROJECT_ID/rocket-trading-app:$COMMIT_SHA
 
-# Build options
+# Build options - Force Docker only
 options:
   machineType: 'E2_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
 
 # Build timeout
-timeout: 1200s 
+timeout: 1200s
+
+# Substitutions to prevent auto-detection
+substitutions:
+  _USE_DOCKER: 'true'
+  _DISABLE_BUILDPACKS: 'true' 
