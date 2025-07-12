@@ -9268,7 +9268,10 @@
          let numerologyCountdownInterval;
          
          function initializeNumerologyForecast() {
-             // Simulate loading for better UX
+             // Immediately fetch the forecast to ensure current date is displayed
+             fetchNumerologyForecast();
+             
+             // Simulate loading for better UX on subsequent loads
              setTimeout(() => {
                  fetchNumerologyForecast();
              }, 1500);
@@ -9299,7 +9302,7 @@
 
                  // Update the display
                  updateNumerologyDisplay({
-                     date: today.toISOString().split('T')[0],
+                     date: today, // Pass the actual Date object instead of ISO string
                      universalDayNumber: dayNumber,
                      forecast: forecast,
                      energyLevel: energyLevel,
@@ -9317,8 +9320,8 @@
              document.getElementById('numerologyLoading').style.display = 'none';
              document.getElementById('numerologyContent').classList.remove('hidden');
 
-             // Update all the display elements
-             document.getElementById('forecastDate').textContent = new Date(data.date).toLocaleDateString('en-US', {
+             // Update all the display elements - use the date object directly to avoid timezone issues
+             document.getElementById('forecastDate').textContent = data.date.toLocaleDateString('en-US', {
                  weekday: 'long',
                  year: 'numeric',
                  month: 'long',
