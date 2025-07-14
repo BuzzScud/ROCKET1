@@ -403,11 +403,24 @@
             try {
                 console.log('Generating signals for:', symbol);
                 
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
-                // Generate mock signals
-                const signals = generateMockSignals(symbol);
+                // Fetch real-time market data and predictions
+                const [quoteResponse, predictionResponse] = await Promise.all([
+                    fetch(`/api/quote/${symbol}`),
+                    fetch(`/api/prediction/${symbol}?days=30`)
+                ]);
+                
+                if (!quoteResponse.ok || !predictionResponse.ok) {
+                    throw new Error('Failed to fetch market data');
+                }
+                
+                const quoteData = await quoteResponse.json();
+                const predictionData = await predictionResponse.json();
+                
+                console.log('Market data:', quoteData);
+                console.log('Prediction data:', predictionData);
+                
+                // Use real signals from prediction API
+                const signals = predictionData.signals || [];
                 currentSignals = signals;
 
                 console.log('Generated signals:', signals);
@@ -415,11 +428,16 @@
                 // Update UI
                 updateSignalsDisplay(signals);
                 updateStatistics(signals);
-                updateMarketStatus(symbol);
+                updateMarketStatus(symbol, quoteData);
                 updateFibonacciAnalysis(signals);
                 updateICTWireframe(signals);
 
-                showNotification('Generated ' + signals.length + ' signals for ' + symbol, 'success');
+                const dataSource = quoteData.data_source || 'unknown';
+                if (dataSource === 'fallback_demo') {
+                    showNotification(`Generated ${signals.length} signals for ${symbol} (using fallback data)`, 'warning');
+                } else {
+                    showNotification(`Generated ${signals.length} signals for ${symbol}`, 'success');
+                }
 
             } catch (error) {
                 console.error('Error generating signals:', error);
@@ -582,11 +600,25 @@
         }
 
         // Update market status
-        function updateMarketStatus(symbol) {
+        function updateMarketStatus(symbol, marketData) {
             try {
                 const now = new Date();
-                const sessions = ['London', 'New York', 'Asian', 'Pre-Market'];
-                const volatilities = ['Low', 'Medium', 'High'];
+                
+                // Determine market session based on current time
+                const hour = now.getHours();
+                let session = 'Pre-Market';
+                if (hour >= 4 && hour < 8) session = 'Asian';
+                else if (hour >= 8 && hour < 13) session = 'London';
+                else if (hour >= 13 && hour < 20) session = 'New York';
+                else session = 'After Hours';
+                
+                // Determine volatility based on price change
+                let volatility = 'Low';
+                if (marketData && marketData.change_percent) {
+                    const changePercent = Math.abs(marketData.change_percent);
+                    if (changePercent > 2) volatility = 'High';
+                    else if (changePercent > 1) volatility = 'Medium';
+                }
                 
                 const currentSymbolEl = document.getElementById('currentSymbol');
                 const lastUpdateEl = document.getElementById('lastUpdate');
@@ -595,8 +627,13 @@
                 
                 if (currentSymbolEl) currentSymbolEl.textContent = symbol;
                 if (lastUpdateEl) lastUpdateEl.textContent = now.toLocaleTimeString();
-                if (marketSessionEl) marketSessionEl.textContent = sessions[Math.floor(Math.random() * sessions.length)];
-                if (volatilityEl) volatilityEl.textContent = volatilities[Math.floor(Math.random() * volatilities.length)];
+                if (marketSessionEl) marketSessionEl.textContent = session;
+                if (volatilityEl) {
+                    volatilityEl.textContent = volatility;
+                    // Add color coding based on volatility
+                    volatilityEl.className = volatility === 'High' ? 'text-red-600' : 
+                                           volatility === 'Medium' ? 'text-yellow-600' : 'text-green-600';
+                }
             } catch (error) {
                 console.error('Error updating market status:', error);
             }

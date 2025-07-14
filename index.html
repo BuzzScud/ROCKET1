@@ -464,6 +464,14 @@
                     Signal Generator
                 </a>
                 
+                <a href="/the-wave" class="nav-link flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg hover:text-blue-600 transition-colors group" onclick="window.location.href='/the-wave'; return false;">
+                    <svg class="mr-3 h-5 w-5 text-blue-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 17c3-3 6-3 9 0s6 3 9 0"></path>
+                    </svg>
+                    <span class="group-hover:text-blue-600">The Wave</span>
+                </a>
+                
                 <a href="#" class="nav-link flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg" data-page="charts" onclick="navigateToPage('charts'); return false;">
                     <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
@@ -1654,15 +1662,62 @@
                             </div>
                         </div>
 
-                        <!-- News Feed -->
-                        <div id="newsFeed" class="bg-white rounded-lg shadow-md p-6" style="display: none;">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <svg class="w-5 h-5 text-red-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-                                </svg>
-                                Latest News
-                            </h3>
-                            <div id="newsList" class="space-y-4 max-h-96 overflow-y-auto"></div>
+                        <!-- Trade Journal -->
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <svg class="w-5 h-5 text-blue-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Trade Journal
+                                </h3>
+                                <div class="flex space-x-2">
+                                    <button onclick="showTradeJournalModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors">
+                                        Add Entry
+                                    </button>
+                                    <button onclick="exportTradeJournal()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors">
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-3 gap-2 mb-4">
+                                <div class="bg-green-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-green-800 mb-1">Winning Trades</h4>
+                                    <p id="winningTrades" class="text-lg font-bold text-green-600">0</p>
+                                </div>
+                                <div class="bg-red-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-red-800 mb-1">Losing Trades</h4>
+                                    <p id="losingTrades" class="text-lg font-bold text-red-600">0</p>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-blue-800 mb-1">Total P&L</h4>
+                                    <p id="totalPL" class="text-lg font-bold text-blue-600">$0.00</p>
+                                </div>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b border-gray-200">
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Date</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Symbol</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">P&L</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-700">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="journalTable">
+                                        <tr>
+                                            <td colspan="4" class="py-8 text-center text-gray-500">
+                                                <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                                <p class="text-sm">No journal entries yet. Start documenting your trades.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -1774,298 +1829,118 @@
                         </div>
                     </div>
 
-                    <!-- Watchlist Management -->
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900">
-                                <svg class="w-5 h-5 text-yellow-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                Stock Watchlist
-                            </h3>
-                            <button onclick="showAddWatchlistModal()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                Add to Watchlist
-                            </button>
-                        </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead>
-                                    <tr class="border-b border-gray-200">
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Symbol</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Current Price</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Target Price</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">% to Target</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Alert</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="watchlistTable">
-                                    <tr>
-                                        <td colspan="6" class="py-8 text-center text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
-                                            <p>No stocks in watchlist. Add stocks to track price targets.</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Trade Journal -->
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900">
-                                <svg class="w-5 h-5 text-blue-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                                Trade Journal
-                            </h3>
-                            <div class="flex space-x-2">
-                                <button onclick="showTradeJournalModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    Add Journal Entry
-                                </button>
-                                <button onclick="exportTradeJournal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    Export
+                    <!-- Optimized Single Row Layout for Trading Tools -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Portfolio Analytics Box -->
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <svg class="w-5 h-5 text-purple-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    Portfolio Analytics
+                                </h3>
+                                <button onclick="refreshPortfolioAnalytics()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors">
+                                    Refresh
                                 </button>
                             </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-green-800 mb-2">Winning Trades</h4>
-                                <p id="winningTrades" class="text-2xl font-bold text-green-600">0</p>
+                            
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div class="bg-blue-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-blue-800 mb-1">Portfolio Beta</h4>
+                                    <p id="portfolioBeta" class="text-lg font-bold text-blue-600">1.2</p>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-green-800 mb-1">Sharpe Ratio</h4>
+                                    <p id="sharpeRatio" class="text-lg font-bold text-green-600">1.45</p>
+                                </div>
+                                <div class="bg-yellow-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-yellow-800 mb-1">Max Drawdown</h4>
+                                    <p id="maxDrawdown" class="text-lg font-bold text-yellow-600">-12.3%</p>
+                                </div>
+                                <div class="bg-red-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-red-800 mb-1">Volatility</h4>
+                                    <p id="portfolioVolatility" class="text-lg font-bold text-red-600">18.2%</p>
+                                </div>
                             </div>
-                            <div class="bg-red-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-red-800 mb-2">Losing Trades</h4>
-                                <p id="losingTrades" class="text-2xl font-bold text-red-600">0</p>
-                            </div>
-                            <div class="bg-blue-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-blue-800 mb-2">Total P&L</h4>
-                                <p id="totalPL" class="text-2xl font-bold text-blue-600">$0.00</p>
+                            
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600">Technology</span>
+                                    <span class="font-medium">45%</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600">Healthcare</span>
+                                    <span class="font-medium">25%</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600">Finance</span>
+                                    <span class="font-medium">20%</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600">Other</span>
+                                    <span class="font-medium">10%</span>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead>
-                                    <tr class="border-b border-gray-200">
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Date</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Symbol</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Entry</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Exit</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">P&L</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Notes</th>
-                                        <th class="text-left py-2 text-sm font-medium text-gray-700">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="journalTable">
-                                    <tr>
-                                        <td colspan="7" class="py-8 text-center text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
-                                            <p>No journal entries yet. Start documenting your trades.</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
 
-                    <!-- Portfolio Analytics Box -->
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900">
-                                <svg class="w-5 h-5 text-purple-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                                Portfolio Analytics
-                            </h3>
-                            <button onclick="refreshPortfolioAnalytics()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                Refresh Data
-                            </button>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                            <div class="bg-blue-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-blue-800 mb-2">Portfolio Beta</h4>
-                                <p id="portfolioBeta" class="text-xl font-bold text-blue-600">1.2</p>
-                                <p class="text-xs text-blue-600 mt-1">vs S&P 500</p>
-                            </div>
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-green-800 mb-2">Sharpe Ratio</h4>
-                                <p id="sharpeRatio" class="text-xl font-bold text-green-600">1.45</p>
-                                <p class="text-xs text-green-600 mt-1">Risk-adjusted return</p>
-                            </div>
-                            <div class="bg-yellow-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-yellow-800 mb-2">Max Drawdown</h4>
-                                <p id="maxDrawdown" class="text-xl font-bold text-yellow-600">-12.3%</p>
-                                <p class="text-xs text-yellow-600 mt-1">Largest loss</p>
-                            </div>
-                            <div class="bg-red-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-red-800 mb-2">Volatility</h4>
-                                <p id="portfolioVolatility" class="text-xl font-bold text-red-600">18.2%</p>
-                                <p class="text-xs text-red-600 mt-1">Annualized</p>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div>
-                                <h4 class="text-md font-semibold text-gray-900 mb-3">Sector Allocation</h4>
-                                <div class="space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm text-gray-600">Technology</span>
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-20 bg-gray-200 rounded-full h-2">
-                                                <div class="bg-blue-600 h-2 rounded-full" style="width: 45%"></div>
-                                            </div>
-                                            <span class="text-sm font-medium">45%</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm text-gray-600">Healthcare</span>
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-20 bg-gray-200 rounded-full h-2">
-                                                <div class="bg-green-600 h-2 rounded-full" style="width: 25%"></div>
-                                            </div>
-                                            <span class="text-sm font-medium">25%</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm text-gray-600">Finance</span>
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-20 bg-gray-200 rounded-full h-2">
-                                                <div class="bg-yellow-600 h-2 rounded-full" style="width: 20%"></div>
-                                            </div>
-                                            <span class="text-sm font-medium">20%</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm text-gray-600">Other</span>
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-20 bg-gray-200 rounded-full h-2">
-                                                <div class="bg-purple-600 h-2 rounded-full" style="width: 10%"></div>
-                                            </div>
-                                            <span class="text-sm font-medium">10%</span>
+                        <!-- Risk Management Box -->
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <svg class="w-5 h-5 text-orange-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 13.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                    Risk Management
+                                </h3>
+                                <div class="relative">
+                                    <button onclick="toggleRiskDropdown()" class="inline-flex items-center justify-center px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                                        Settings
+                                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div id="riskDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                        <div class="py-1">
+                                            <button onclick="showRiskManagementModal()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Risk Management</button>
+                                            <button onclick="showAlertSettingsModal()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Alert Settings</button>
+                                            <button onclick="showPositionLimitsModal()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Position Limits</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                <h4 class="text-md font-semibold text-gray-900 mb-3">Performance Metrics</h4>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">YTD Return:</span>
-                                        <span id="ytdReturn" class="text-sm font-medium text-green-600">+24.5%</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">1-Year Return:</span>
-                                        <span id="oneYearReturn" class="text-sm font-medium text-green-600">+18.2%</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Best Trade:</span>
-                                        <span id="bestTrade" class="text-sm font-medium text-green-600">+$2,450</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Worst Trade:</span>
-                                        <span id="worstTrade" class="text-sm font-medium text-red-600">-$890</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Avg Trade:</span>
-                                        <span id="avgTrade" class="text-sm font-medium text-blue-600">+$347</span>
-                                    </div>
+                            
+                            <div class="grid grid-cols-3 gap-2 mb-4">
+                                <div class="bg-red-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-red-800 mb-1">Active Alerts</h4>
+                                    <p id="activeAlerts" class="text-lg font-bold text-red-600">3</p>
+                                </div>
+                                <div class="bg-yellow-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-yellow-800 mb-1">Risk Score</h4>
+                                    <p id="riskScore" class="text-lg font-bold text-yellow-600">Medium</p>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded-lg text-center">
+                                    <h4 class="text-xs font-medium text-green-800 mb-1">Stop Losses</h4>
+                                    <p id="stopLossCount" class="text-lg font-bold text-green-600">7</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Market Alerts & Risk Management Box -->
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900">
-                                <svg class="w-5 h-5 text-orange-600 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 13.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                </svg>
-                                Market Alerts & Risk Management
-                            </h3>
-                            <button onclick="showRiskManagementModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                Set Risk Rules
-                            </button>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="bg-red-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-red-800 mb-2">Active Alerts</h4>
-                                <p id="activeAlerts" class="text-xl font-bold text-red-600">3</p>
-                                <p class="text-xs text-red-600 mt-1">Price triggers</p>
-                            </div>
-                            <div class="bg-yellow-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-yellow-800 mb-2">Risk Score</h4>
-                                <p id="riskScore" class="text-xl font-bold text-yellow-600">Medium</p>
-                                <p class="text-xs text-yellow-600 mt-1">Portfolio risk</p>
-                            </div>
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="text-sm font-medium text-green-800 mb-2">Stop Losses</h4>
-                                <p id="stopLossCount" class="text-xl font-bold text-green-600">7</p>
-                                <p class="text-xs text-green-600 mt-1">Active orders</p>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div>
-                                <h4 class="text-md font-semibold text-gray-900 mb-3">Recent Alerts</h4>
-                                <div class="space-y-2 max-h-32 overflow-y-auto">
-                                    <div class="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                                            <span class="text-sm font-medium">AAPL</span>
-                                        </div>
-                                        <span class="text-xs text-red-600">Price below $150</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                            <span class="text-sm font-medium">MSFT</span>
-                                        </div>
-                                        <span class="text-xs text-yellow-600">Volume spike</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            <span class="text-sm font-medium">GOOGL</span>
-                                        </div>
-                                        <span class="text-xs text-green-600">Target reached</span>
-                                    </div>
+                            
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Position Size Limit:</span>
+                                    <span class="font-medium">5% per trade</span>
                                 </div>
-                            </div>
-                            <div>
-                                <h4 class="text-md font-semibold text-gray-900 mb-3">Risk Management</h4>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Position Size Limit:</span>
-                                        <span class="text-sm font-medium">5% per trade</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Stop Loss:</span>
-                                        <span class="text-sm font-medium">-2% default</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Daily Loss Limit:</span>
-                                        <span class="text-sm font-medium">-$1,000</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Margin Usage:</span>
-                                        <span class="text-sm font-medium text-green-600">45% / 80%</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Correlation Risk:</span>
-                                        <span class="text-sm font-medium text-yellow-600">Medium</span>
-                                    </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Stop Loss:</span>
+                                    <span class="font-medium">-2% default</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Daily Loss Limit:</span>
+                                    <span class="font-medium">-$1,000</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Margin Usage:</span>
+                                    <span class="font-medium text-green-600">45% / 80%</span>
                                 </div>
                             </div>
                         </div>
@@ -3346,10 +3221,17 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                            <select id="tradeType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="BUY">Buy</option>
-                                <option value="SELL">Sell</option>
-                            </select>
+                            <div class="relative">
+                                <select id="tradeType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 appearance-none pr-8">
+                                    <option value="BUY">Buy</option>
+                                    <option value="SELL">Sell</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -3371,13 +3253,20 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Strategy</label>
-                            <select id="tradeStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="Long Term">Long Term</option>
-                                <option value="Swing Trade">Swing Trade</option>
-                                <option value="Day Trade">Day Trade</option>
-                                <option value="Options">Options</option>
-                                <option value="Scalping">Scalping</option>
-                            </select>
+                            <div class="relative">
+                                <select id="tradeStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 appearance-none pr-8">
+                                    <option value="Long Term">Long Term</option>
+                                    <option value="Swing Trade">Swing Trade</option>
+                                    <option value="Day Trade">Day Trade</option>
+                                    <option value="Options">Options</option>
+                                    <option value="Scalping">Scalping</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -3419,11 +3308,18 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Alert Type</label>
-                        <select id="watchlistAlertType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                            <option value="Above">Above Target</option>
-                            <option value="Below">Below Target</option>
-                            <option value="Both">Both Directions</option>
-                        </select>
+                        <div class="relative">
+                            <select id="watchlistAlertType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white text-gray-900 appearance-none pr-8">
+                                <option value="Above">Above Target</option>
+                                <option value="Below">Below Target</option>
+                                <option value="Both">Both Directions</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
@@ -3482,24 +3378,38 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Trade Type</label>
-                            <select id="journalTradeType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="Long">Long</option>
-                                <option value="Short">Short</option>
-                            </select>
+                            <div class="relative">
+                                <select id="journalTradeType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 appearance-none pr-8">
+                                    <option value="Long">Long</option>
+                                    <option value="Short">Short</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Strategy Used</label>
-                        <select id="journalStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="Breakout">Breakout</option>
-                            <option value="Mean Reversion">Mean Reversion</option>
-                            <option value="Trend Following">Trend Following</option>
-                            <option value="Swing Trading">Swing Trading</option>
-                            <option value="Scalping">Scalping</option>
-                            <option value="Options">Options</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <div class="relative">
+                            <select id="journalStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 appearance-none pr-8">
+                                <option value="Breakout">Breakout</option>
+                                <option value="Mean Reversion">Mean Reversion</option>
+                                <option value="Trend Following">Trend Following</option>
+                                <option value="Swing Trading">Swing Trading</option>
+                                <option value="Scalping">Scalping</option>
+                                <option value="Options">Options</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                     
                     <div>
@@ -4868,8 +4778,7 @@
             console.log('fetchRealChartData called with:', symbol, timeframe);
             console.log('Using Yahoo Finance API via Python backend');
             
-            const API_BASE_URL = 'http://localhost:5001';
-            const url = `${API_BASE_URL}/api/chart/${symbol}?timeframe=${timeframe}`;
+            const url = `/api/chart/${symbol}?timeframe=${timeframe}`;
 
             console.log('Making API request to:', url);
             
@@ -5212,8 +5121,7 @@
             console.log('Loading market overview data from Yahoo Finance API...');
             
             try {
-                const API_BASE_URL = 'http://localhost:5001';
-                const response = await axios.get(`${API_BASE_URL}/api/market-overview`);
+                const response = await axios.get('/api/market-overview');
                 
                 console.log('Market overview response:', response.data);
                 
@@ -8291,10 +8199,8 @@
                 document.getElementById('apiStatus').textContent = 'Fetching...';
                 document.getElementById('apiStatus').className = 'text-2xl font-bold text-yellow-600';
 
-                const API_BASE_URL = 'http://localhost:5001';
-                
                 // Fetch stock quote
-                const quoteResponse = await axios.get(`${API_BASE_URL}/api/quote/${symbol}`);
+                const quoteResponse = await axios.get(`/api/quote/${symbol}`);
                 const quoteData = quoteResponse.data;
 
                 if (quoteData.error) {
@@ -8305,7 +8211,7 @@
                 }
 
                 // Fetch chart data
-                const chartResponse = await axios.get(`${API_BASE_URL}/api/chart/${symbol}?timeframe=1M`);
+                const chartResponse = await axios.get(`/api/chart/${symbol}?timeframe=1M`);
                 const chartData = chartResponse.data;
 
                 // Update stock info
@@ -9096,6 +9002,29 @@
                 showFinancialNotification('Risk management rules updated', 'success');
             }
         }
+
+        function showAlertSettingsModal() {
+            showFinancialNotification('Alert settings configuration coming soon', 'info');
+        }
+
+        function showPositionLimitsModal() {
+            showFinancialNotification('Position limits configuration coming soon', 'info');
+        }
+
+        function toggleRiskDropdown() {
+            const dropdown = document.getElementById('riskDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('riskDropdown');
+            const button = event.target.closest('[onclick="toggleRiskDropdown()"]');
+            
+            if (!button && dropdown && !dropdown.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
 
         function updateRiskManagementDisplay() {
             const riskRules = JSON.parse(localStorage.getItem('riskRules') || '{}');
