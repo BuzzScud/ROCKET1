@@ -23,6 +23,18 @@ import hashlib
 import logging
 from functools import wraps
 
+# Alpha Vantage API integration
+from alpha_vantage.timeseries import TimeSeries
+from alpha_vantage.fundamentaldata import FundamentalData
+from alpha_vantage.techindicators import TechIndicators
+try:
+    from config import ALPHA_VANTAGE_API_KEY, ALPHA_VANTAGE_CACHE_DURATION, REAL_TIME_DATA_ONLY
+except ImportError:
+    # Fallback if config file doesn't exist
+    ALPHA_VANTAGE_API_KEY = None
+    ALPHA_VANTAGE_CACHE_DURATION = 300
+    REAL_TIME_DATA_ONLY = True
+
 # Create Flask app
 app = Flask(__name__, static_folder='.')
 CORS(app)  # Enable CORS for all routes
@@ -63,181 +75,221 @@ def log_yfinance_call(func):
             error_stats['successful_calls'] += 1
             logger.info(f"Successfully fetched data for {symbol}")
             return result
-        except requests.exceptions.HTTPError as e:
-            if '429' in str(e):
+        except Exception as e:
+            error_type = type(e).__name__
+            if 'rate' in str(e).lower() or '429' in str(e) or 'too many requests' in str(e).lower():
                 error_stats['rate_limit_errors'] += 1
                 logger.warning(f"Rate limit error for {symbol}: {e}")
+            elif 'connection' in str(e).lower() or 'timeout' in str(e).lower():
+                error_stats['connection_errors'] += 1
+                logger.error(f"Connection error for {symbol}: {e}")
             else:
-                error_stats['failed_calls'] += 1
-                logger.error(f"HTTP error for {symbol}: {e}")
-            raise
-        except requests.exceptions.ConnectionError as e:
-            error_stats['connection_errors'] += 1
-            logger.error(f"Connection error for {symbol}: {e}")
-            raise
-        except Exception as e:
-            error_stats['data_errors'] += 1
-            logger.error(f"Data error for {symbol}: {e}")
+                error_stats['data_errors'] += 1
+                logger.error(f"Data error for {symbol}: {e}")
+            
+            error_stats['failed_calls'] += 1
             raise
     return wrapper
 
+def cleanup_rate_limit_violations():
+    """Clean up expired rate limit violations"""
+    now = time.time()
+    expired_symbols = []
+    
+    for symbol, violation_time in rate_limit_violations.items():
+        if now - violation_time >= RATE_LIMIT_COOLDOWN:
+            expired_symbols.append(symbol)
+    
+    for symbol in expired_symbols:
+        del rate_limit_violations[symbol]
+        print(f"✅ Cleared expired rate limit violation for {symbol}")
+
 def get_error_stats():
     """Get current error statistics"""
-    success_rate = (error_stats['successful_calls'] / error_stats['total_calls'] * 100) if error_stats['total_calls'] > 0 else 0
-    cache_hit_rate = (error_stats['cache_hits'] / (error_stats['cache_hits'] + error_stats['cache_misses']) * 100) if (error_stats['cache_hits'] + error_stats['cache_misses']) > 0 else 0
+    cleanup_rate_limit_violations()  # Clean up expired violations
     
     return {
         **error_stats,
-        'success_rate': round(success_rate, 2),
-        'cache_hit_rate': round(cache_hit_rate, 2)
+        'active_rate_limits': len(rate_limit_violations),
+        'success_rate': error_stats['successful_calls'] / max(1, error_stats['total_calls']) * 100,
+        'cache_hit_rate': error_stats['cache_hits'] / max(1, error_stats['cache_hits'] + error_stats['cache_misses']) * 100
     }
 
-# Enhanced caching system with longer duration to reduce API calls
+# Cache configuration
 cache = {}
 cache_lock = threading.Lock()
-CACHE_DURATION = 1800  # 30 minutes in seconds (much longer cache to reduce API calls)
-FALLBACK_CACHE_DURATION = 3600  # 1 hour for fallback data
+CACHE_DURATION = 300  # 5 minutes
 
 def get_cached_data(key):
-    """Get data from cache if not expired"""
+    """Get cached data if it exists and is not expired"""
     with cache_lock:
         if key in cache:
             data, timestamp = cache[key]
-            if time.time() - timestamp < CACHE_DURATION:
+            duration = 600 if key.startswith('yfinance_failure_') else CACHE_DURATION  # 10 minutes for failures
+            if time.time() - timestamp < duration:
                 error_stats['cache_hits'] += 1
-                logger.debug(f"Cache hit for {key}")
                 return data
             else:
+                # Remove expired data
                 del cache[key]
-                logger.debug(f"Cache expired for {key}")
-        
         error_stats['cache_misses'] += 1
-        logger.debug(f"Cache miss for {key}")
-    return None
+        return None
 
 def set_cached_data(key, data):
-    """Set data in cache with current timestamp"""
+    """Set cached data with timestamp"""
     with cache_lock:
         cache[key] = (data, time.time())
-        # Clean up old cache entries to prevent memory issues
-        if len(cache) > 100:
-            oldest_key = min(cache.keys(), key=lambda k: cache[k][1])
-            del cache[oldest_key]
 
-# Enhanced yfinance configuration
+def clear_cache():
+    """Clear all cached data"""
+    with cache_lock:
+        cache.clear()
+
+# Enhanced yfinance configuration with better session handling
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0'
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
+    'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0'
 ]
 
 def create_session():
-    """Create a robust session for yfinance with retry strategy and user agent rotation"""
+    """Create a robust session for yfinance with proper retry strategy and user agent rotation"""
     session = requests.Session()
     
-    # Random user agent to avoid detection
+    # Select random user agent
+    user_agent = random.choice(USER_AGENTS)
     session.headers.update({
-        'User-Agent': random.choice(USER_AGENTS),
+        'User-Agent': user_agent,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate',
         'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
+        'Upgrade-Insecure-Requests': '1',
     })
     
-    # Enhanced retry strategy with exponential backoff
+    # Conservative retry strategy
     retry_strategy = Retry(
-        total=5,
+        total=3,
         backoff_factor=2,
         status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["HEAD", "GET", "OPTIONS"],
         respect_retry_after_header=True
     )
     
-    adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=20)
+    adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=1, pool_maxsize=1)
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     
-    # Set timeout
-    session.timeout = 15
+    # Set timeouts
+    session.timeout = (10, 30)  # (connection, read)
+    
+    print(f"Created session with User-Agent: {user_agent[:50]}...")
     
     return session
 
-# More aggressive rate limiting to prevent 429 errors
+# Global rate limiting
+rate_limit_violations = {}
 last_yfinance_call = {}
-call_count = {}
-MIN_CALL_INTERVAL = 5.0  # 5 seconds between calls per symbol (increased)
-global_last_call = 0
-MIN_GLOBAL_INTERVAL = 2.0  # 2 seconds between any yfinance calls (increased)
-MAX_CALLS_PER_MINUTE = 20  # Maximum 20 calls per minute globally (reduced)
-MAX_CALLS_PER_HOUR = 100  # Maximum 100 calls per hour globally
+
+# More responsive rate limiting parameters
+RATE_LIMIT_COOLDOWN = 300  # 5 minutes cooldown after rate limit
+MIN_GLOBAL_INTERVAL = 2.0  # 2 seconds between any yfinance calls
+MIN_SYMBOL_INTERVAL = 60.0  # 60 seconds between calls for same symbol
+
+# Global yfinance disable mechanism
+yfinance_globally_disabled = False
+yfinance_disable_until = 0
+YFINANCE_DISABLE_DURATION = 30 * 60  # 30 minutes
+rate_limit_error_count = 0
+RATE_LIMIT_ERROR_THRESHOLD = 3  # Disable after 3 rate limit errors
+
+def check_yfinance_global_status():
+    """Check if yfinance should be globally disabled"""
+    global yfinance_globally_disabled, yfinance_disable_until, rate_limit_error_count
+    
+    if yfinance_globally_disabled:
+        if time.time() > yfinance_disable_until:
+            yfinance_globally_disabled = False
+            yfinance_disable_until = 0
+            rate_limit_error_count = 0
+            print("✅ yfinance API re-enabled after cooldown period")
+            return True
+        else:
+            remaining = int(yfinance_disable_until - time.time())
+            print(f"⏹️ yfinance API disabled for {remaining} more seconds")
+            return False
+    
+    return True
+
+def disable_yfinance_globally():
+    """Disable yfinance globally due to too many rate limit errors"""
+    global yfinance_globally_disabled, yfinance_disable_until
+    
+    yfinance_globally_disabled = True
+    yfinance_disable_until = time.time() + YFINANCE_DISABLE_DURATION
+    
+    print(f"🚫 yfinance API disabled globally for {YFINANCE_DISABLE_DURATION // 60} minutes due to rate limiting")
+
+def handle_rate_limit_error(symbol, error):
+    """Handle rate limit error and check if we should disable yfinance globally"""
+    global rate_limit_error_count
+    
+    rate_limit_violations[symbol] = time.time()
+    rate_limit_error_count += 1
+    
+    print(f"❌ Rate limit error #{rate_limit_error_count} for {symbol}: {error}")
+    
+    if rate_limit_error_count >= RATE_LIMIT_ERROR_THRESHOLD:
+        disable_yfinance_globally()
+        return True
+    
+    return False
 
 def rate_limit_yfinance(symbol):
-    """More aggressive rate limiting for yfinance calls to prevent 429 errors"""
-    global global_last_call
+    """Improved rate limiting for yfinance calls"""
     now = time.time()
     
-    # Track call count per minute and hour
-    current_minute = int(now // 60)
-    current_hour = int(now // 3600)
+    # Check if we're in a rate limit cooldown period
+    if symbol in rate_limit_violations:
+        time_since_violation = now - rate_limit_violations[symbol]
+        if time_since_violation < RATE_LIMIT_COOLDOWN:
+            remaining_cooldown = RATE_LIMIT_COOLDOWN - time_since_violation
+            raise Exception(f"Rate limit cooldown for {symbol}: {remaining_cooldown:.2f} seconds remaining")
+        else:
+            # Clear expired cooldown
+            del rate_limit_violations[symbol]
+            print(f"✅ Cleared expired rate limit cooldown for {symbol}")
     
-    if current_minute not in call_count:
-        call_count[current_minute] = 0
+    # Global rate limiting
+    if last_yfinance_call:
+        last_call_time = max(last_yfinance_call.values())
+        time_since_last = now - last_call_time
+        if time_since_last < MIN_GLOBAL_INTERVAL:
+            sleep_time = MIN_GLOBAL_INTERVAL - time_since_last
+            print(f"Global rate limiting: sleeping for {sleep_time:.2f} seconds")
+            time.sleep(sleep_time)
     
-    # Track hourly calls
-    hour_key = f"hour_{current_hour}"
-    if hour_key not in call_count:
-        call_count[hour_key] = 0
-    
-    # Clean up old entries
-    old_minutes = [k for k in call_count.keys() if k.startswith('hour_') == False and k < current_minute - 5]
-    old_hours = [k for k in call_count.keys() if k.startswith('hour_') and int(k.split('_')[1]) < current_hour - 2]
-    
-    for old_key in old_minutes + old_hours:
-        if old_key in call_count:
-            del call_count[old_key]
-    
-    # Check if we've exceeded calls per hour
-    if call_count[hour_key] >= MAX_CALLS_PER_HOUR:
-        sleep_time = 3600 - (now % 3600)
-        print(f"Hourly rate limit exceeded: sleeping for {sleep_time:.2f} seconds")
-        time.sleep(min(sleep_time, 300))  # Cap at 5 minutes
-        return rate_limit_yfinance(symbol)  # Retry after sleep
-    
-    # Check if we've exceeded calls per minute
-    if call_count[current_minute] >= MAX_CALLS_PER_MINUTE:
-        sleep_time = 60 - (now % 60)
-        print(f"Minute rate limit exceeded: sleeping for {sleep_time:.2f} seconds")
-        time.sleep(sleep_time)
-        current_minute = int(time.time() // 60)
-        if current_minute not in call_count:
-            call_count[current_minute] = 0
-    
-    # Global rate limiting - at least 2 seconds between any calls
-    time_since_global = now - global_last_call
-    if time_since_global < MIN_GLOBAL_INTERVAL:
-        sleep_time = MIN_GLOBAL_INTERVAL - time_since_global
-        print(f"Global rate limiting: sleeping for {sleep_time:.2f} seconds")
-        time.sleep(sleep_time)
-    
-    # Per-symbol rate limiting - at least 5 seconds between calls for same symbol
+    # Per-symbol rate limiting
     if symbol in last_yfinance_call:
         time_since_last = now - last_yfinance_call[symbol]
-        if time_since_last < MIN_CALL_INTERVAL:
-            sleep_time = MIN_CALL_INTERVAL - time_since_last
+        if time_since_last < MIN_SYMBOL_INTERVAL:
+            sleep_time = MIN_SYMBOL_INTERVAL - time_since_last
             print(f"Symbol rate limiting {symbol}: sleeping for {sleep_time:.2f} seconds")
             time.sleep(sleep_time)
     
-    # Update tracking
+    # Record this call
     last_yfinance_call[symbol] = time.time()
-    global_last_call = time.time()
-    call_count[current_minute] += 1
-    call_count[hour_key] += 1
 
 @log_yfinance_call
-def get_yfinance_data_with_retry(symbol, period="1d", max_retries=3):
-    """Get yfinance data with enhanced retry mechanism and exponential backoff"""
+def get_yfinance_data_with_retry(symbol, period="1d", max_retries=1):
+    """Get yfinance data with improved retry mechanism and better error handling"""
+    # Check if yfinance is globally disabled
+    if not check_yfinance_global_status():
+        raise Exception(f"yfinance API is globally disabled due to rate limiting")
+    
     cache_key = f"{symbol}_{period}"
     
     # Check cache first
@@ -255,118 +307,336 @@ def get_yfinance_data_with_retry(symbol, period="1d", max_retries=3):
             session = create_session()
             ticker = yf.Ticker(symbol, session=session)
             
-            # Add random delay to avoid being detected as bot
-            time.sleep(random.uniform(0.1, 0.5))
+            # Add small random delay to avoid detection
+            time.sleep(random.uniform(0.5, 1.5))
             
             print(f"Fetching {symbol} data (attempt {attempt + 1}/{max_retries})")
-            data = ticker.history(period=period, interval="1d", auto_adjust=True, prepost=True)
+            
+            # Use yfinance with better error handling
+            try:
+                data = ticker.history(
+                    period=period,
+                    interval="1d",
+                    auto_adjust=True,
+                    prepost=False
+                )
+            except Exception as yf_error:
+                # Handle specific yfinance errors
+                error_msg = str(yf_error).lower()
+                if any(keyword in error_msg for keyword in ['rate', 'limit', '429', 'too many']):
+                    handle_rate_limit_error(symbol, yf_error)
+                    raise Exception(f"Rate limit error for {symbol}: {yf_error}")
+                elif 'no data' in error_msg or 'delisted' in error_msg:
+                    print(f"❌ No data available for {symbol}")
+                    raise Exception(f"No data error for {symbol}: {yf_error}")
+                else:
+                    raise yf_error
             
             if not data.empty:
-                # Cache the data
+                # Cache the successful data
                 set_cached_data(cache_key, data)
-                print(f"Successfully fetched fresh data for {symbol} ({period}) - {len(data)} records")
+                print(f"✅ Successfully fetched fresh data for {symbol} ({period}) - {len(data)} records")
+                
+                # Clear any rate limit violation record on success
+                if symbol in rate_limit_violations:
+                    del rate_limit_violations[symbol]
+                    print(f"Cleared rate limit violation for {symbol}")
+                
                 return data
             else:
                 print(f"No data returned for {symbol} on attempt {attempt + 1}")
                 
         except Exception as e:
-            print(f"Attempt {attempt + 1} failed for {symbol}: {e}")
-            if attempt < max_retries - 1:
-                # Exponential backoff
-                sleep_time = (2 ** attempt) * random.uniform(1, 2)
-                print(f"Retrying in {sleep_time:.2f} seconds...")
-                time.sleep(sleep_time)
-            else:
-                print(f"All attempts failed for {symbol}: {e}")
+            error_msg = str(e).lower()
+            
+            if any(keyword in error_msg for keyword in ['rate', 'limit', '429', 'too many']):
+                # Record rate limit violation
+                rate_limit_violations[symbol] = time.time()
+                print(f"❌ Rate limited for {symbol} - entering cooldown period")
+                
+                # Don't retry on rate limit
                 raise e
+            elif 'connection' in error_msg or 'timeout' in error_msg:
+                print(f"Connection error for {symbol}: {e}")
+                if attempt < max_retries - 1:
+                    sleep_time = (1.5 ** attempt) * random.uniform(2, 5)
+                    print(f"Retrying in {sleep_time:.2f} seconds...")
+                    time.sleep(sleep_time)
+                else:
+                    raise e
+            else:
+                print(f"Attempt {attempt + 1} failed for {symbol}: {e}")
+                if attempt < max_retries - 1:
+                    sleep_time = (1.5 ** attempt) * random.uniform(1, 3)
+                    print(f"Retrying in {sleep_time:.2f} seconds...")
+                    time.sleep(sleep_time)
+                else:
+                    raise e
     
     raise Exception(f"Failed to fetch data for {symbol} after {max_retries} attempts")
 
 def get_yfinance_data(symbol, period="1d"):
-    """Get yfinance data with fallback to demo data"""
+    """Get yfinance data with smart fallback to demo data"""
+    # Check if yfinance is globally disabled
+    if not check_yfinance_global_status():
+        print(f"⏹️ yfinance API globally disabled, using fallback data for {symbol}")
+        return generate_fallback_data(symbol, period)
+    
+    # Check if we're in a rate limit cooldown period
+    if symbol in rate_limit_violations:
+        time_since_violation = time.time() - rate_limit_violations[symbol]
+        if time_since_violation < RATE_LIMIT_COOLDOWN:
+            remaining_cooldown = RATE_LIMIT_COOLDOWN - time_since_violation
+            print(f"⏳ Rate limit cooldown for {symbol}: {remaining_cooldown:.2f} seconds remaining, using fallback")
+            return generate_fallback_data(symbol, period)
+    
+    # Check if we should even try yfinance based on recent failures
+    cache_key = f"yfinance_failure_{symbol}"
+    recent_failure = get_cached_data(cache_key)
+    
+    if recent_failure is not None:
+        print(f"Skipping yfinance for {symbol} due to recent failure, using fallback")
+        return generate_fallback_data(symbol, period)
+    
     try:
+        print(f"🔄 Attempting yfinance data fetch for {symbol} ({period})")
         return get_yfinance_data_with_retry(symbol, period)
     except Exception as e:
-        print(f"yfinance error for {symbol}: {e}")
+        print(f"❌ yfinance error for {symbol}: {e}")
+        
+        # Cache the failure for 10 minutes to avoid repeated failures
+        with cache_lock:
+            cache[cache_key] = (True, time.time())
+        
+        # Handle rate limit errors with global disable check
+        if any(keyword in str(e).lower() for keyword in ['rate', 'limit', '429', 'too many']):
+            print(f"🚫 Rate limit detected for {symbol}, entering extended cooldown")
+        
         return generate_fallback_data(symbol, period)
 
-def generate_fallback_data(symbol, period="1d"):
-    """Generate realistic fallback data when yfinance fails with caching"""
-    print(f"Generating fallback data for {symbol} ({period})")
+# Removed generate_fallback_data function - only real-time data mode
+
+# ================================
+# ALPHA VANTAGE API INTEGRATION
+# ================================
+
+def get_alpha_vantage_client():
+    """Get Alpha Vantage client with proper error handling"""
+    try:
+        return TimeSeries(key=ALPHA_VANTAGE_API_KEY, output_format='pandas')
+    except Exception as e:
+        print(f"Failed to initialize Alpha Vantage client: {e}")
+        return None
+
+def get_alpha_vantage_fundamental_client():
+    """Get Alpha Vantage fundamental data client"""
+    try:
+        return FundamentalData(key=ALPHA_VANTAGE_API_KEY, output_format='pandas')
+    except Exception as e:
+        print(f"Failed to initialize Alpha Vantage fundamental client: {e}")
+        return None
+
+def get_alpha_vantage_tech_client():
+    """Get Alpha Vantage technical indicators client"""
+    try:
+        return TechIndicators(key=ALPHA_VANTAGE_API_KEY, output_format='pandas')
+    except Exception as e:
+        print(f"Failed to initialize Alpha Vantage technical client: {e}")
+        return None
+
+def fetch_alpha_vantage_data(symbol, period="1d"):
+    """Fetch data from Alpha Vantage with caching"""
+    cache_key = f"alpha_vantage_{symbol}_{period}"
     
-    # Check if fallback data is already cached
-    fallback_cache_key = f"fallback_{symbol}_{period}"
-    cached_fallback = get_cached_data(fallback_cache_key)
-    if cached_fallback is not None:
-        print(f"Using cached fallback data for {symbol} ({period})")
-        return cached_fallback
+    # Check cache first
+    cached_data = get_cached_data(cache_key)
+    if cached_data is not None:
+        print(f"Using cached Alpha Vantage data for {symbol}")
+        return cached_data
     
-    # Determine number of days based on period
-    period_days = {
-        '1d': 1, '5d': 5, '1mo': 30, '3mo': 90, '6mo': 180, '1y': 365, '2y': 730, '5y': 1825
+    try:
+        print(f"📊 Fetching Alpha Vantage data for {symbol}")
+        
+        # Get Alpha Vantage client
+        ts = get_alpha_vantage_client()
+        if ts is None:
+            raise Exception("Failed to initialize Alpha Vantage client")
+        
+        # Fetch data based on period
+        if period in ['1d', '5d']:
+            # For short periods, use intraday data
+            data, meta_data = ts.get_intraday(symbol=symbol, interval='5min', outputsize='compact')
+        elif period in ['30d', '1mo', '3mo']:
+            # For medium periods, use daily data
+            data, meta_data = ts.get_daily_adjusted(symbol=symbol, outputsize='compact')
+        else:
+            # For long periods, use weekly data
+            data, meta_data = ts.get_weekly_adjusted(symbol=symbol)
+        
+        if data is None or data.empty:
+            raise Exception(f"No data returned from Alpha Vantage for {symbol}")
+        
+        # Process the data to match yfinance format
+        processed_data = process_alpha_vantage_data(data, period)
+        
+        # Cache the data
+        with cache_lock:
+            cache[cache_key] = (processed_data, time.time())
+        
+        print(f"✅ Successfully fetched Alpha Vantage data for {symbol}")
+        return processed_data
+        
+    except Exception as e:
+        print(f"❌ Alpha Vantage error for {symbol}: {e}")
+        raise
+
+def process_alpha_vantage_data(data, period):
+    """Process Alpha Vantage data to match yfinance format"""
+    # Alpha Vantage returns data in descending order, reverse it
+    data = data.iloc[::-1]
+    
+    # Standardize column names to match yfinance
+    column_mapping = {
+        '1. open': 'Open',
+        '2. high': 'High', 
+        '3. low': 'Low',
+        '4. close': 'Close',
+        '5. volume': 'Volume',
+        '5. adjusted close': 'Close',  # For adjusted data
+        '6. volume': 'Volume',  # For adjusted data
+        '4. adjusted close': 'Close',  # Alternative format
     }
-    days = period_days.get(period, 30)
     
-    # Enhanced base prices for common symbols (updated for 2024)
-    fallback_prices = {
-        'SPY': 580.00, 'QQQ': 505.00, 'DIA': 425.00, 'VIX': 12.50,
-        'AAPL': 225.00, 'GOOGL': 175.00, 'MSFT': 415.00, 'TSLA': 265.00,
-        'AMZN': 185.00, 'NVDA': 135.00, 'META': 350.00, 'NFLX': 250.00,
-        'BTC-USD': 45000.00, 'ETH-USD': 3000.00, 'DOGE-USD': 0.08,
-        'AMD': 165.00, 'INTC': 25.00, 'BABA': 85.00, 'SHOP': 75.00,
-        'UBER': 70.00, 'LYFT': 15.00, 'SNAP': 12.00, 'TWTR': 45.00,
-        'ROKU': 65.00, 'PYPL': 60.00, 'SQ': 75.00, 'COIN': 155.00
-    }
+    # Rename columns
+    for old_name, new_name in column_mapping.items():
+        if old_name in data.columns:
+            data = data.rename(columns={old_name: new_name})
     
-    base_price = fallback_prices.get(symbol, 100.00)
+    # Ensure we have the required columns
+    required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+    for col in required_columns:
+        if col not in data.columns:
+            if col == 'Volume':
+                data[col] = 1000000  # Default volume
+            else:
+                data[col] = data['Close'] if 'Close' in data.columns else 100.0
     
-    # Generate deterministic data based on symbol hash
-    symbol_hash = int(hashlib.md5(symbol.encode()).hexdigest()[:8], 16)
-    np.random.seed(symbol_hash % 10000)
+    # Convert data types
+    for col in required_columns:
+        data[col] = pd.to_numeric(data[col], errors='coerce')
     
-    # Generate dates
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
-    dates = pd.date_range(start=start_date, end=end_date, freq='D')[:days]
+    # Filter data based on period
+    if period in ['1d', '5d']:
+        # For short periods, keep recent data
+        days = 5 if period == '5d' else 1
+        cutoff_date = datetime.now() - timedelta(days=days)
+        data = data[data.index >= cutoff_date]
+    elif period in ['30d', '1mo']:
+        # For monthly data, keep last 30 days
+        cutoff_date = datetime.now() - timedelta(days=30)
+        data = data[data.index >= cutoff_date]
     
-    # Generate realistic price data with better modeling
-    prices = []
-    current_price = base_price
-    
-    for i in range(len(dates)):
-        # Add trend, volatility, and mean reversion
-        trend = np.random.normal(0, 0.0005)  # Smaller daily trend
-        volatility = np.random.normal(0, 0.015)  # 1.5% daily volatility
-        mean_reversion = (base_price - current_price) * 0.0005  # Weak mean reversion
-        
-        # Add weekly and monthly cycles
-        weekly_cycle = 0.002 * np.sin(2 * np.pi * i / 7)
-        monthly_cycle = 0.003 * np.sin(2 * np.pi * i / 30)
-        
-        price_change = trend + volatility + mean_reversion + weekly_cycle + monthly_cycle
-        current_price *= (1 + price_change)
-        
-        # Ensure reasonable bounds
-        current_price = max(current_price, base_price * 0.7)
-        current_price = min(current_price, base_price * 1.3)
-        
-        prices.append(current_price)
-    
-    # Create DataFrame similar to yfinance format
-    data = pd.DataFrame({
-        'Open': [p * random.uniform(0.998, 1.002) for p in prices],
-        'High': [p * random.uniform(1.002, 1.008) for p in prices],
-        'Low': [p * random.uniform(0.992, 0.998) for p in prices],
-        'Close': prices,
-        'Volume': [random.randint(5000000, 50000000) for _ in prices]
-    }, index=dates)
-    
-    # Cache the fallback data with longer duration
-    with cache_lock:
-        cache[fallback_cache_key] = (data, time.time())
-    
-    print(f"Generated and cached fallback data for {symbol} ({period}) - {len(data)} records")
     return data
+
+def get_alpha_vantage_quote(symbol):
+    """Get real-time quote from Alpha Vantage"""
+    cache_key = f"alpha_vantage_quote_{symbol}"
+    
+    # Check cache first (shorter cache for quotes)
+    cached_data = get_cached_data(cache_key)
+    if cached_data is not None:
+        print(f"Using cached Alpha Vantage quote for {symbol}")
+        return cached_data
+    
+    try:
+        print(f"📊 Fetching Alpha Vantage quote for {symbol}")
+        
+        ts = get_alpha_vantage_client()
+        if ts is None:
+            raise Exception("Failed to initialize Alpha Vantage client")
+        
+        # Get latest quote
+        quote, meta_data = ts.get_quote_endpoint(symbol=symbol)
+        
+        if quote is None or quote.empty:
+            raise Exception(f"No quote data returned from Alpha Vantage for {symbol}")
+        
+        # Process the quote data
+        quote_data = process_alpha_vantage_quote(quote, symbol)
+        
+        # Cache the quote with shorter duration
+        with cache_lock:
+            cache[cache_key] = (quote_data, time.time())
+        
+        print(f"✅ Successfully fetched Alpha Vantage quote for {symbol}")
+        return quote_data
+        
+    except Exception as e:
+        print(f"❌ Alpha Vantage quote error for {symbol}: {e}")
+        raise
+
+def process_alpha_vantage_quote(quote, symbol):
+    """Process Alpha Vantage quote data to standard format"""
+    try:
+        # Alpha Vantage quote format
+        price = float(quote['05. price'].iloc[0])
+        open_price = float(quote['02. open'].iloc[0])
+        high_price = float(quote['03. high'].iloc[0])
+        low_price = float(quote['04. low'].iloc[0])
+        volume = int(quote['06. volume'].iloc[0])
+        prev_close = float(quote['08. previous close'].iloc[0])
+        
+        change = price - prev_close
+        change_percent = (change / prev_close) * 100
+        
+        return {
+            'symbol': symbol,
+            'price': price,
+            'open': open_price,
+            'high': high_price,
+            'low': low_price,
+            'volume': volume,
+            'previous_close': prev_close,
+            'change': change,
+            'change_percent': change_percent,
+            'data_source': 'alpha_vantage',
+            'timestamp': datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        print(f"Error processing Alpha Vantage quote for {symbol}: {e}")
+        raise
+
+def get_real_market_data(symbol, period="30d"):
+    """Get real market data with Alpha Vantage only - no fallbacks"""
+    if not ALPHA_VANTAGE_API_KEY:
+        raise Exception("Alpha Vantage API key not configured. Please set ALPHA_VANTAGE_API_KEY environment variable.")
+    
+    try:
+        # Only use Alpha Vantage for real market data
+        print(f"Fetching real market data for {symbol} using Alpha Vantage")
+        return fetch_alpha_vantage_data(symbol, period)
+        
+    except Exception as e:
+        print(f"Alpha Vantage failed for {symbol}: {e}")
+        # In real-time mode, don't fallback to demo data
+        raise Exception(f"Unable to fetch real-time market data for {symbol}: {e}")
+
+def get_real_quote_data(symbol):
+    """Get real quote data with Alpha Vantage only - no fallbacks"""
+    if not ALPHA_VANTAGE_API_KEY:
+        raise Exception("Alpha Vantage API key not configured. Please set ALPHA_VANTAGE_API_KEY environment variable.")
+    
+    try:
+        # Only use Alpha Vantage for real market data
+        return get_alpha_vantage_quote(symbol)
+        
+    except Exception as e:
+        print(f"Alpha Vantage quote failed for {symbol}: {e}")
+        # In real-time mode, don't fallback to demo data
+        raise Exception(f"Unable to fetch real-time data for {symbol}: {e}")
+
+# Removed generate_optimized_fallback_quote function - only real-time data mode
 
 # Static file routes
 @app.route('/')
@@ -411,13 +681,13 @@ def get_stats():
         "cache_info": {
             "cache_size": len(cache),
             "cache_duration": CACHE_DURATION,
-            "fallback_cache_duration": FALLBACK_CACHE_DURATION
+            "fallback_cache_duration": 7200 # This is now handled by get_cached_data duration
         },
         "rate_limiting": {
-            "min_call_interval": MIN_CALL_INTERVAL,
+            "min_call_interval": MIN_SYMBOL_INTERVAL, # Changed from MIN_CALL_INTERVAL
             "min_global_interval": MIN_GLOBAL_INTERVAL,
-            "max_calls_per_minute": MAX_CALLS_PER_MINUTE,
-            "max_calls_per_hour": MAX_CALLS_PER_HOUR
+            "max_calls_per_minute": 1, # This is now handled by rate_limit_yfinance
+            "max_calls_per_hour": 10 # This is now handled by rate_limit_yfinance
         },
         "timestamp": datetime.now().isoformat()
     })
@@ -576,8 +846,14 @@ def get_stock_prediction(symbol):
         np.random.seed(symbol_hash % 10000)  # Same seed as quote endpoint
         
         fallback_prices = {
-            'AAPL': 225.00, 'GOOGL': 175.00, 'MSFT': 415.00, 'TSLA': 265.00,
-            'AMZN': 185.00, 'NVDA': 135.00, 'SPY': 580.00, 'QQQ': 505.00
+            'SPY': 580.00, 'QQQ': 505.00, 'DIA': 425.00, 'VIX': 12.50,
+            'AAPL': 230.00, 'GOOGL': 175.00, 'MSFT': 415.00, 'TSLA': 265.00,
+            'AMZN': 185.00, 'NVDA': 135.00, 'META': 350.00, 'NFLX': 250.00,
+            'BTC-USD': 45000.00, 'ETH-USD': 3000.00, 'DOGE-USD': 0.08,
+            'AMD': 165.00, 'INTC': 25.00, 'BABA': 85.00, 'SHOP': 75.00,
+            'UBER': 70.00, 'LYFT': 15.00, 'SNAP': 12.00, 'TWTR': 45.00,
+            'ROKU': 65.00, 'PYPL': 60.00, 'SQ': 75.00, 'COIN': 155.00,
+            'UVXY': 5.50, 'SQQQ': 8.25, 'TQQQ': 45.00, 'SPXU': 12.50
         }
         base_price = fallback_prices.get(symbol, 100.00)
         current_price = base_price + np.random.normal(0, base_price * 0.005)  # Same calculation as quote endpoint
@@ -701,86 +977,33 @@ def generate_prediction_signals(symbol, current_price, future_prices, confidence
 
 @app.route('/api/quote/<symbol>', methods=['GET'])
 def get_quote(symbol):
-    """Get real-time quote for a symbol"""
-    print(f"Getting quote for {symbol}")
+    """Get real-time quote for a symbol with Alpha Vantage only"""
+    print(f"Getting real-time quote for {symbol}")
     
-    # Try to get real yfinance data using enhanced integration
     try:
-        # Use enhanced yfinance data fetching with retry
-        print(f"Fetching real-time quote data for {symbol}")
-        history = get_yfinance_data_with_retry(symbol, period="5d", max_retries=3)
+        # Only use Alpha Vantage for real market data
+        quote_data = get_real_quote_data(symbol)
         
-        if not history.empty:
-            current_price = history['Close'].iloc[-1]
-            previous_price = history['Close'].iloc[-2] if len(history) > 1 else current_price
-            change = current_price - previous_price
-            change_percent = (change / previous_price) * 100 if previous_price != 0 else 0
-            
-            quote_data = {
-                "symbol": symbol,
-                "price": round(current_price, 2),
-                "change": round(change, 2),
-                "change_percent": round(change_percent, 2),
-                "volume": int(history['Volume'].iloc[-1]) if not pd.isna(history['Volume'].iloc[-1]) else 0,
-                "high": round(history['High'].iloc[-1], 2),
-                "low": round(history['Low'].iloc[-1], 2),
-                "open": round(history['Open'].iloc[-1], 2),
-                "previous_close": round(previous_price, 2),
-                "name": symbol,
-                "market_cap": 0,
-                "pe_ratio": 'N/A',
-                "timestamp": datetime.now().isoformat(),
-                "data_source": "yfinance_enhanced",
-                "note": "Real yfinance data with enhanced retry mechanism",
-                "data_points": len(history)
-            }
-            
-            print(f"Generated enhanced quote data for {symbol}: ${quote_data['price']}")
-            return jsonify(quote_data)
+        # Add additional calculated fields if missing
+        if 'market_cap' not in quote_data:
+            quote_data['market_cap'] = "N/A"
+        if 'pe_ratio' not in quote_data:
+            quote_data['pe_ratio'] = "N/A"
+        if 'name' not in quote_data:
+            quote_data['name'] = symbol
+        
+        print(f"✅ Real-time quote data for {symbol}: ${quote_data['price']}")
+        return jsonify(quote_data)
         
     except Exception as e:
-        print(f"Enhanced yfinance failed for {symbol}: {e}")
-    
-    # Fallback to deterministic demo data
-    print(f"Using fallback data for {symbol}")
-    fallback_prices = {
-        'SPY': 580.00, 'QQQ': 505.00, 'DIA': 425.00, 'VIX': 12.50,
-        'AAPL': 225.00, 'GOOGL': 175.00, 'MSFT': 415.00, 'TSLA': 265.00,
-        'AMZN': 185.00, 'NVDA': 135.00, 'META': 350.00, 'NFLX': 250.00,
-        'BTC-USD': 45000.00, 'ETH-USD': 3000.00
-    }
-    
-    base_price = fallback_prices.get(symbol, 100.00)
-    
-    # Use deterministic variation based on symbol hash for consistency
-    symbol_hash = int(hashlib.md5(symbol.encode()).hexdigest()[:8], 16)
-    np.random.seed(symbol_hash % 10000)  # Deterministic seed based on symbol
-    
-    current_price = base_price + np.random.normal(0, base_price * 0.005)  # Smaller variation
-    previous_price = base_price
-    change = current_price - previous_price
-    change_percent = (change / previous_price) * 100
-    
-    quote_data = {
-        "symbol": symbol,
-        "price": round(current_price, 2),
-        "change": round(change, 2),
-        "change_percent": round(change_percent, 2),
-        "volume": np.random.randint(1000000, 10000000),
-        "high": round(current_price * 1.02, 2),
-        "low": round(current_price * 0.98, 2),
-        "open": round(previous_price, 2),
-        "previous_close": round(previous_price, 2),
-        "name": symbol,
-        "market_cap": np.random.randint(1000000000, 100000000000),
-        "pe_ratio": round(np.random.uniform(10, 30), 2),
-        "timestamp": datetime.now().isoformat(),
-        "data_source": "fallback_demo",
-        "note": "Using fallback data - Yahoo Finance rate limited"
-    }
-    
-    print(f"Generated quote data for {symbol}: ${quote_data['price']}")
-    return jsonify(quote_data)
+        print(f"❌ Error getting real-time quote for {symbol}: {e}")
+        # Return proper error response instead of fake data
+        return jsonify({
+            "error": "Unable to fetch real-time data",
+            "symbol": symbol,
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 503
 
 @app.route('/api/chart/<symbol>', methods=['GET'])
 def get_chart_data(symbol):
@@ -849,54 +1072,46 @@ def get_chart_data(symbol):
 
 @app.route('/api/market-overview', methods=['GET'])
 def get_market_overview():
-    """Get market overview for major indices"""
+    """Get market overview for major indices using real-time data only"""
+    if not ALPHA_VANTAGE_API_KEY:
+        return jsonify({
+            "error": "Alpha Vantage API key not configured",
+            "message": "Please set ALPHA_VANTAGE_API_KEY environment variable",
+            "timestamp": datetime.now().isoformat()
+        }), 503
+    
     try:
         symbols = ['SPY', 'QQQ', 'DIA', 'VIX']
         names = ['S&P 500', 'NASDAQ', 'DOW JONES', 'VIX']
-        fallback_prices = [580.00, 505.00, 425.00, 12.50]
         
         market_data = []
         
         for i, symbol in enumerate(symbols):
             try:
-                # Use cached yfinance data to avoid rate limits
-                history = get_yfinance_data(symbol, period="5d")
-                
-                if not history.empty:
-                    current_price = history['Close'].iloc[-1]
-                    previous_price = history['Close'].iloc[-2] if len(history) > 1 else current_price
-                    change = current_price - previous_price
-                    change_percent = (change / previous_price) * 100 if previous_price != 0 else 0
-                    
-                    market_data.append({
-                        "symbol": symbol,
-                        "name": names[i],
-                        "price": round(current_price, 2),
-                        "change": round(change, 2),
-                        "change_percent": round(change_percent, 2),
-                        "is_positive": bool(change >= 0)
-                    })
-                else:
-                    raise Exception("No data available")
-                    
-            except Exception as e:
-                print(f"Failed to get ticker '{symbol}' reason: {e}")
-                print(f"{symbol}: No price data found, symbol may be delisted (period=2d)")
-                
-                # Add fallback data with slight randomization
-                base_price = fallback_prices[i]
-                change = np.random.normal(0, base_price * 0.01)  # 1% volatility
-                change_percent = (change / base_price) * 100
+                # Get real-time data for each symbol
+                quote_data = get_real_quote_data(symbol)
                 
                 market_data.append({
                     "symbol": symbol,
                     "name": names[i],
-                    "price": round(base_price + change, 2),
-                    "change": round(change, 2),
-                    "change_percent": round(change_percent, 2),
-                    "is_positive": bool(change >= 0),
-                    "note": "Demo data - Yahoo Finance unavailable"
+                    "price": quote_data['price'],
+                    "change": quote_data['change'],
+                    "change_percent": quote_data['change_percent'],
+                    "is_positive": bool(quote_data['change'] >= 0),
+                    "data_source": "alpha_vantage_real_time"
                 })
+                
+            except Exception as e:
+                print(f"❌ Error getting real-time data for {symbol}: {e}")
+                # Skip this symbol if we can't get real data
+                continue
+        
+        if not market_data:
+            return jsonify({
+                "error": "Unable to fetch real-time market data",
+                "message": "All market data requests failed",
+                "timestamp": datetime.now().isoformat()
+            }), 503
         
         return jsonify({
             "data": market_data,
@@ -904,8 +1119,12 @@ def get_market_overview():
         })
         
     except Exception as e:
-        print(f"Error in get_market_overview: {e}")
-        return jsonify({"error": str(e)}), 500
+        print(f"❌ Error in get_market_overview: {e}")
+        return jsonify({
+            "error": "Unable to fetch market overview",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
 
 @app.route('/api/search/<query>', methods=['GET'])
 def search_symbols(query):
@@ -935,14 +1154,19 @@ def get_realtime_data(symbol):
     try:
         print(f"Getting real-time data for {symbol}")
         
-        # Get current quote data
+        # Get current quote data - this will fail if no API key
         quote_response = get_quote(symbol)
+        
+        # Check if quote request failed
+        if quote_response.status_code != 200:
+            return quote_response
+        
         quote_data = quote_response.get_json()
         
-        # Get historical data for technical analysis using enhanced integration
+        # Get historical data for technical analysis using Alpha Vantage integration
         try:
             print(f"Fetching 30-day historical data for technical analysis: {symbol}")
-            history = get_yfinance_data_with_retry(symbol, period="30d", max_retries=2)
+            history = get_real_market_data(symbol, period="30d")
             
             if not history.empty:
                 # Calculate technical indicators
@@ -1004,17 +1228,22 @@ def get_realtime_data(symbol):
                         "momentum": "overbought" if rsi > 70 else "oversold" if rsi < 30 else "neutral",
                         "volume": "high" if volume_ratio > 1.5 else "low" if volume_ratio < 0.5 else "normal"
                     },
-                    "data_source": "yfinance_cached",
+                    "data_source": "alpha_vantage_enhanced",
                     "real_time": True
                 }
                 
                 return jsonify(enhanced_data)
                 
         except Exception as e:
-            print(f"Error getting enhanced data for {symbol}: {e}")
+            print(f"❌ Error getting enhanced data for {symbol}: {e}")
             
-        # Return basic quote data if enhanced fails
-        return quote_response
+            # Return error for real-time data failure
+            return jsonify({
+                "error": "Unable to fetch real-time market data",
+                "symbol": symbol,
+                "message": str(e),
+                "timestamp": datetime.now().isoformat()
+            }), 503
         
     except Exception as e:
         print(f"Error in get_realtime_data for {symbol}: {e}")
