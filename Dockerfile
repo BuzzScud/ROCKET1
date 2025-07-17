@@ -26,7 +26,6 @@ USER appuser
 EXPOSE 8080
 
 # Set environment variables
-ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
 
 # Use gunicorn for production

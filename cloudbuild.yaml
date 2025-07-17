@@ -30,8 +30,6 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
-      - '--port'
-      - '8080'
       - '--memory'
       - '1Gi'
       - '--cpu'
@@ -44,8 +42,6 @@ steps:
       - '300'
       - '--concurrency'
       - '80'
-      - '--set-env-vars'
-      - 'PORT=8080'
 
 # Store images in Google Container Registry
 images:
