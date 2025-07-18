@@ -795,13 +795,13 @@
                     }
                 }
                 
-                // Call the prediction API with retry logic
+                // Call the Wave API v2.0 for advanced predictions
                 let predictionData = null;
                 let predictionError = null;
                 
                 try {
-                    console.log('Fetching prediction data...');
-                    const response = await fetch(`/api/prediction/${symbol}?days=30&t=${timestamp}`);
+                    console.log('Fetching Wave API v2.0 prediction data...');
+                    const response = await fetch(`/api/wave/predict/${symbol}?days=30&t=${timestamp}`);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -812,26 +812,31 @@
                     if (predictionData.error) {
                         throw new Error(predictionData.error);
                     }
+                    
+                    console.log('Wave API v2.0 prediction data:', predictionData);
                 } catch (error) {
-                    console.error('Prediction API failed:', error);
+                    console.error('Wave API v2.0 failed:', error);
                     predictionError = error;
                     
-                    // Generate basic prediction as fallback
+                    // Try fallback to basic prediction
                     const basePrice = realtimeData?.price || 100;
                     predictionData = generateBasicPrediction(symbol, basePrice);
                     
-                    showNotification('Using basic prediction model - API unavailable', 'warning');
+                    showNotification('Using basic prediction model - Wave API unavailable', 'warning');
                 }
                 
-                // Enhance prediction data with real-time technical indicators
-                if (realtimeData && realtimeData.technical_indicators) {
-                    predictionData.technical_indicators = realtimeData.technical_indicators;
-                    predictionData.trend_analysis = realtimeData.trend_analysis;
+                // Enhance prediction data with Wave API v2.0 features
+                if (predictionData.ensemble && predictionData.models) {
+                    predictionData.technical_indicators = predictionData.ensemble;
+                    predictionData.trend_analysis = {
+                        confidence: predictionData.ensemble.confidence,
+                        method: predictionData.ensemble.method
+                    };
                     predictionData.real_time = true;
                 }
                 
                 currentPrediction = predictionData;
-                console.log('Generated wave prediction using enhanced real-time data:', predictionData);
+                console.log('Generated wave prediction using Wave API v2.0:', predictionData);
 
                 // Update UI
                 updatePredictionOverview(predictionData);
@@ -841,8 +846,9 @@
                 updateConfidenceDisplay(predictionData);
                 updatePredictionTable(predictionData);
 
-                const dataSource = predictionData.real_time ? 'real-time yfinance data' : 'cached yfinance data';
-                showNotification(`Wave prediction generated for ${symbol} using ${dataSource} (${predictionData.confidence.toFixed(1)}% confidence)`, 'success');
+                const dataSource = predictionData.data_source === 'alpha_vantage_real' ? 'real-time Alpha Vantage data' : 'cached data';
+                const confidence = predictionData.ensemble?.confidence || predictionData.confidence || 0;
+                showNotification(`Wave prediction generated for ${symbol} using ${dataSource} (${confidence.toFixed(1)}% confidence)`, 'success');
 
             } catch (error) {
                 console.error('Error generating wave prediction:', error);
@@ -947,34 +953,60 @@
                 const currentPriceEl = document.getElementById('currentPrice');
                 const prediction1dEl = document.getElementById('prediction1d');
                 const prediction7dEl = document.getElementById('prediction7d');
+                
+                // Handle Wave API v2.0 data structure
+                const currentPrice = data.current_price || data.ensemble?.predictions?.[0] || 0;
+                const predictions = data.ensemble?.predictions || data.predictions || [];
+                
+                // Update current price
+                if (currentPriceEl) {
+                    currentPriceEl.textContent = `$${currentPrice.toFixed(2)}`;
+                    currentPriceEl.className = 'text-2xl font-bold text-green-500';
+                }
+                
+                // Update 1-day prediction
+                if (prediction1dEl && predictions.length > 0) {
+                    const day1Price = predictions[0] || currentPrice;
+                    prediction1dEl.textContent = `$${day1Price.toFixed(2)}`;
+                    prediction1dEl.className = 'text-lg font-semibold text-blue-500';
+                }
+                
+                // Update 7-day prediction
+                if (prediction7dEl && predictions.length > 6) {
+                    const day7Price = predictions[6] || currentPrice;
+                    prediction7dEl.textContent = `$${day7Price.toFixed(2)}`;
+                    prediction7dEl.className = 'text-lg font-semibold text-blue-500';
+                }
+                
+                // Update 30-day prediction
                 const prediction30dEl = document.getElementById('prediction30d');
-                const change1dEl = document.getElementById('change1d');
-                const change7dEl = document.getElementById('change7d');
-                const change30dEl = document.getElementById('change30d');
-
-                if (currentPriceEl) currentPriceEl.textContent = `$${data.current_price}`;
+                if (prediction30dEl && predictions.length > 29) {
+                    const day30Price = predictions[29] || currentPrice;
+                    prediction30dEl.textContent = `$${day30Price.toFixed(2)}`;
+                    prediction30dEl.className = 'text-lg font-semibold text-blue-500';
+                }
+                // Calculate percentage changes for Wave API v2.0 data
+                const calculateChange = (predictedPrice, currentPrice) => {
+                    return ((predictedPrice - currentPrice) / currentPrice) * 100;
+                };
                 
-                if (prediction1dEl && data.predictions.length > 0) {
-                    prediction1dEl.textContent = `$${data.predictions[0]}`;
-                    const change1d = ((data.predictions[0] - data.current_price) / data.current_price * 100);
-                    change1dEl.textContent = `${change1d >= 0 ? '+' : ''}${change1d.toFixed(2)}%`;
-                    change1dEl.className = `text-sm font-medium ${change1d >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                // Update change indicators
+                if (change1dEl && predictions.length > 0) {
+                    const day1Change = calculateChange(predictions[0], currentPrice);
+                    change1dEl.textContent = `${day1Change >= 0 ? '+' : ''}${day1Change.toFixed(2)}%`;
+                    change1dEl.className = `text-sm font-medium ${day1Change >= 0 ? 'text-green-600' : 'text-red-600'}`;
                 }
                 
-                if (prediction7dEl && data.predictions.length >= 7) {
-                    const avg7d = data.predictions.slice(0, 7).reduce((a, b) => a + b, 0) / 7;
-                    prediction7dEl.textContent = `$${avg7d.toFixed(2)}`;
-                    const change7d = ((avg7d - data.current_price) / data.current_price * 100);
-                    change7dEl.textContent = `${change7d >= 0 ? '+' : ''}${change7d.toFixed(2)}%`;
-                    change7dEl.className = `text-sm font-medium ${change7d >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                if (change7dEl && predictions.length > 6) {
+                    const day7Change = calculateChange(predictions[6], currentPrice);
+                    change7dEl.textContent = `${day7Change >= 0 ? '+' : ''}${day7Change.toFixed(2)}%`;
+                    change7dEl.className = `text-sm font-medium ${day7Change >= 0 ? 'text-green-600' : 'text-red-600'}`;
                 }
                 
-                if (prediction30dEl && data.predictions.length >= 30) {
-                    const avg30d = data.predictions.reduce((a, b) => a + b, 0) / data.predictions.length;
-                    prediction30dEl.textContent = `$${avg30d.toFixed(2)}`;
-                    const change30d = ((avg30d - data.current_price) / data.current_price * 100);
-                    change30dEl.textContent = `${change30d >= 0 ? '+' : ''}${change30d.toFixed(2)}%`;
-                    change30dEl.className = `text-sm font-medium ${change30d >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                if (change30dEl && predictions.length > 29) {
+                    const day30Change = calculateChange(predictions[29], currentPrice);
+                    change30dEl.textContent = `${day30Change >= 0 ? '+' : ''}${day30Change.toFixed(2)}%`;
+                    change30dEl.className = `text-sm font-medium ${day30Change >= 0 ? 'text-green-600' : 'text-red-600'}`;
                 }
             } catch (error) {
                 console.error('Error updating prediction overview:', error);
@@ -991,8 +1023,10 @@
                     predictionChart.destroy();
                 }
                 
-                const labels = data.prediction_dates.slice(0, 30);
-                const predictions = data.predictions.slice(0, 30);
+                // Handle Wave API v2.0 data structure
+                const labels = data.prediction_dates?.slice(0, 30) || [];
+                const predictions = data.ensemble?.predictions?.slice(0, 30) || data.predictions?.slice(0, 30) || [];
+                const currentPrice = data.current_price || predictions[0] || 0;
                 
                 predictionChart = new Chart(ctx, {
                     type: 'line',
@@ -1007,7 +1041,7 @@
                             fill: true
                         }, {
                             label: 'Current Price',
-                            data: Array(labels.length).fill(data.current_price),
+                            data: Array(labels.length).fill(currentPrice),
                             borderColor: 'rgb(255, 99, 132)',
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderDash: [5, 5],
@@ -1035,7 +1069,7 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: `${data.symbol} Price Prediction - Wave Model`
+                                text: `${data.symbol} Price Prediction - Wave API v2.0`
                             }
                         }
                     }
@@ -1078,36 +1112,28 @@
                         </div>
                 `;
                 
-                // Add technical indicators if available (real-time data)
-                if (data.technical_indicators) {
-                    const indicators = data.technical_indicators;
+                // Add Wave API v2.0 ensemble data if available
+                if (data.ensemble) {
+                    const ensemble = data.ensemble;
                     html += `
                         <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500 mt-4">
-                            <h4 class="font-semibold text-green-900 mb-3">Real-Time Technical Indicators</h4>
+                            <h4 class="font-semibold text-green-900 mb-3">Wave API v2.0 Ensemble Analysis</h4>
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="bg-white p-2 rounded">
-                                    <span class="text-sm text-gray-600">SMA 20:</span>
-                                    <span class="text-green-600 font-semibold">$${indicators.sma_20}</span>
+                                    <span class="text-sm text-gray-600">Confidence:</span>
+                                    <span class="text-green-600 font-semibold">${ensemble.confidence.toFixed(1)}%</span>
                                 </div>
                                 <div class="bg-white p-2 rounded">
-                                    <span class="text-sm text-gray-600">SMA 50:</span>
-                                    <span class="text-green-600 font-semibold">$${indicators.sma_50}</span>
+                                    <span class="text-sm text-gray-600">Method:</span>
+                                    <span class="text-blue-600 font-semibold">${ensemble.method}</span>
                                 </div>
                                 <div class="bg-white p-2 rounded">
-                                    <span class="text-sm text-gray-600">RSI:</span>
-                                    <span class="text-blue-600 font-semibold">${indicators.rsi}</span>
+                                    <span class="text-sm text-gray-600">Models Used:</span>
+                                    <span class="text-purple-600 font-semibold">${data.model_count || 5}</span>
                                 </div>
                                 <div class="bg-white p-2 rounded">
-                                    <span class="text-sm text-gray-600">Volume Ratio:</span>
-                                    <span class="text-purple-600 font-semibold">${indicators.volume_ratio.toFixed(2)}x</span>
-                                </div>
-                                <div class="bg-white p-2 rounded">
-                                    <span class="text-sm text-gray-600">Support:</span>
-                                    <span class="text-red-600 font-semibold">$${indicators.support}</span>
-                                </div>
-                                <div class="bg-white p-2 rounded">
-                                    <span class="text-sm text-gray-600">Resistance:</span>
-                                    <span class="text-orange-600 font-semibold">$${indicators.resistance}</span>
+                                    <span class="text-sm text-gray-600">Data Source:</span>
+                                    <span class="text-orange-600 font-semibold">${data.data_source || 'Alpha Vantage'}</span>
                                 </div>
                             </div>
                         </div>
@@ -1198,7 +1224,8 @@
                 const confidenceContainer = document.getElementById('confidenceDisplay');
                 if (!confidenceContainer) return;
                 
-                const confidence = data.confidence;
+                // Handle Wave API v2.0 confidence structure
+                const confidence = data.ensemble?.confidence || data.confidence || 0;
                 const confidenceColor = confidence >= 80 ? 'text-green-600' : confidence >= 60 ? 'text-yellow-600' : 'text-red-600';
                 const confidenceBg = confidence >= 80 ? 'bg-green-500' : confidence >= 60 ? 'bg-yellow-500' : 'bg-red-500';
                 
@@ -1232,10 +1259,15 @@
                 
                 tableBody.innerHTML = '';
                 
-                data.predictions.slice(0, 30).forEach((price, index) => {
-                    const date = data.prediction_dates[index];
-                    const change = price - data.current_price;
-                    const changePercent = (change / data.current_price) * 100;
+                // Handle Wave API v2.0 data structure
+                const predictions = data.ensemble?.predictions || data.predictions || [];
+                const currentPrice = data.current_price || predictions[0] || 0;
+                const dates = data.prediction_dates || [];
+                
+                predictions.slice(0, 30).forEach((price, index) => {
+                    const date = dates[index] || `Day ${index + 1}`;
+                    const change = price - currentPrice;
+                    const changePercent = (change / currentPrice) * 100;
                     const trend = change > 0 ? 'Bullish' : change < 0 ? 'Bearish' : 'Neutral';
                     const trendClass = change > 0 ? 'text-green-600' : change < 0 ? 'text-red-600' : 'text-gray-600';
                     

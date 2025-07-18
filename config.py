@@ -2,7 +2,7 @@
 import os
 
 # Alpha Vantage API Configuration
-ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
+ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY') or 'YTHM5DS3LGQ9NE5C'
 
 # REQUIRED: You must get your free API key from: https://www.alphavantage.co/support/#api-key
 # Set your API key using: export ALPHA_VANTAGE_API_KEY=your_actual_api_key_here
